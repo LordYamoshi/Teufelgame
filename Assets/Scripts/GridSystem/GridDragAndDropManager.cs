@@ -1,21 +1,30 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GridDragAndDropManager : MonoBehaviour
 {
+    [Header("References")]
     public Camera mainCamera;
+    public GridManager gridManager;
+    
+    [Header("Materials")]
     public Material highlightMaterial;
     public Material validPositionMaterial;
     public Material invalidPositionMaterial;
-    public GridManager gridManager;
-
+    
+    // Currently selected object
     private GameObject selectedObject;
+    private GridObject selectedGridObject;
+    
+    // Preview object during dragging
     private GameObject previewObject;
-    private Material originalMaterial;
+    
+    // Dragging state
     private bool isDragging = false;
     private Vector2Int originalGridPosition;
-    private Vector2Int objectSize;
-
-    void Update()
+    private List<Vector2Int> originalOccupiedCells = new List<Vector2Int>();
+    
+        private void Update()
     {
         if (isDragging)
         {
@@ -30,22 +39,31 @@ public class GridDragAndDropManager : MonoBehaviour
             TrySelectObject();
         }
     }
-
-    void TrySelectObject()
+    
+    /// <summary>
+    /// Tries to select an object from the grid
+    /// </summary>
+    private void TrySelectObject()
     {
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
             int layerMask = LayerMask.GetMask("Objects");
+            
             if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, layerMask))
             {
+                // Try to get the object and its grid properties
                 selectedObject = hit.collider.gameObject;
-                var gridPosition = gridManager.GetGridPosition(selectedObject.transform.position);
-                originalGridPosition = new Vector2Int(gridPosition.x, gridPosition.z);
-                GridObject gridObject = selectedObject.GetComponent<GridObject>();
-                if (gridObject != null)
+                selectedGridObject = selectedObject.GetComponent<GridObject>();
+                
+                if (selectedGridObject != null)
                 {
-                    objectSize = new Vector2Int(gridObject.width, gridObject.depth);
+                    // Get the current position in the grid
+                    originalGridPosition = gridManager.GetGridPosition(selectedObject.transform.position);
+                    
+                    // Store the cells this object currently occupies
+                    originalOccupiedCells = selectedGridObject.GetCurrentGridPositions();
+                    
                     StartDragging();
                 }
                 else
@@ -56,117 +74,123 @@ public class GridDragAndDropManager : MonoBehaviour
         }
     }
     
-    void StartDragging()
+    /// <summary>
+    /// Starts the dragging process
+    /// </summary>
+    private void StartDragging()
     {
         isDragging = true;
-
-        Renderer renderer = selectedObject.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            originalMaterial = renderer.material;
-            renderer.material = highlightMaterial;
-        }
-
+        
+        // Highlight the selected object
+        selectedGridObject.SetAllMaterials(highlightMaterial);
+        
+        // Create a preview object
         previewObject = GameObject.Instantiate(selectedObject);
         previewObject.SetActive(true);
-
-        Renderer previewRenderer = previewObject.GetComponent<Renderer>();
-        if (previewRenderer != null)
+        
+        // Configure the preview object
+        GridObject previewGridObject = previewObject.GetComponent<GridObject>();
+        previewGridObject.SetAllMaterials(validPositionMaterial);
+        
+        // Disable colliders on the preview
+        Collider[] colliders = previewObject.GetComponentsInChildren<Collider>();
+        foreach (var collider in colliders)
         {
-            Material previewMat = new Material(validPositionMaterial);
-            previewRenderer.material = previewMat;
+            collider.enabled = false;
         }
-
-        Collider previewCollider = previewObject.GetComponent<Collider>();
-        if (previewCollider != null)
-        {
-            previewCollider.enabled = false;
-        }
-
-        gridManager.RemoveObject(selectedObject, originalGridPosition.x, originalGridPosition.y, objectSize.x, objectSize.y);
+        
+        // Remove the original object from the grid
+        gridManager.RemoveObject(selectedObject, originalOccupiedCells);
+        
+        // Reset cell visuals
+        gridManager.ResetAllCellVisuals();
     }
-
-    public void UpdateDraggingPosition()
+    
+    /// <summary>
+    /// Updates the position and visual feedback during dragging
+    /// </summary>
+    private void UpdateDraggingPosition()
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         Plane groundPlane = new Plane(Vector3.up, new Vector3(0, gridManager.gridOrigin.y, 0));
+        
         if (groundPlane.Raycast(ray, out float distance))
         {
             Vector3 worldPoint = ray.GetPoint(distance);
-            var gridPosition = gridManager.GetGridPosition(worldPoint);
-            int gridX = gridPosition.x;
-            int gridZ = gridPosition.z;
-
-            bool isValidPosition = gridManager.IsValidPlacement(gridX, gridZ, objectSize.x, objectSize.y);
-
-            Renderer previewRenderer = previewObject.GetComponent<Renderer>();
-            if (previewRenderer != null)
-            {
-                previewRenderer.material = isValidPosition ? validPositionMaterial : invalidPositionMaterial;
-            }
-
-            Vector3 centerPosition = CalculateCenterPosition(gridX, gridZ, objectSize);
-            previewObject.transform.position = centerPosition;
-
-            // Change color of objects being hovered over
-            for (int dx = 0; dx < objectSize.x; dx++)
-            {
-                for (int dz = 0; dz < objectSize.y; dz++)
-                {
-                    int checkX = gridX + dx;
-                    int checkZ = gridZ + dz;
-
-                    if (checkX >= 0 && checkX < gridManager.width && checkZ >= 0 && checkZ < gridManager.depth)
-                    {
-                        GameObject hoveredObject = gridManager.gridData[checkX, checkZ];
-                        if (hoveredObject != null)
-                        {
-                            Renderer hoveredRenderer = hoveredObject.GetComponent<Renderer>();
-                            if (hoveredRenderer != null)
-                            {
-                                hoveredRenderer.material.color = Color.red;
-                            }
-                        }
-                    }
-                }
-            }
-
-            gridManager.DrawDebugGrid();
+            Vector2Int gridPosition = gridManager.GetGridPosition(worldPoint);
+            
+            // Get the cells this object would occupy at the current position
+            List<Vector2Int> occupiedCells = selectedGridObject.GetOccupiedCells(gridPosition);
+            
+            // Check if the placement is valid
+            bool isValidPlacement = gridManager.IsValidPlacement(occupiedCells);
+            
+            // Update the preview object's position and material
+            GridObject previewGridObject = previewObject.GetComponent<GridObject>();
+            previewGridObject.SetAllMaterials(isValidPlacement ? validPositionMaterial : invalidPositionMaterial);
+            
+            // Calculate the center position for the preview
+            Vector3 centerPosition = gridManager.GetWorldPosition(gridPosition);
+            Vector3 offset = selectedGridObject.GetCenterOffset(gridManager.cellSize);
+            previewObject.transform.position = centerPosition + offset;
+            
+            // Visualize the affected cells
+            gridManager.ResetAllCellVisuals();
+            gridManager.UpdateCellsVisual(occupiedCells, isValidPlacement);
         }
     }
-
-    void FinalizePlacement()
+    
+    /// <summary>
+    /// Finalizes the placement of the dragged object
+    /// </summary>
+    private void FinalizePlacement()
     {
-        var gridPosition = gridManager.GetGridPosition(previewObject.transform.position);
-        int gridX = gridPosition.x;
-        int gridZ = gridPosition.z;
-
-        if (gridManager.IsValidPlacement(gridX, gridZ, objectSize.x, objectSize.y))
+        // Get the final grid position
+        Vector2Int gridPosition = gridManager.GetGridPosition(previewObject.transform.position);
+    
+        // Get the cells this object would occupy
+        List<Vector2Int> occupiedCells = selectedGridObject.GetOccupiedCells(gridPosition);
+    
+        bool wasPlaced = false;
+    
+        // Try to place the object at the new position
+        if (gridManager.IsValidPlacement(occupiedCells))
         {
-            gridManager.PlaceObject(selectedObject, gridX, gridZ, objectSize.x, objectSize.y);
+            // Place at new position
+            gridManager.PlaceObject(selectedObject, occupiedCells);
+        
+            // Update the object's position in the world
+            Vector3 centerPosition = gridManager.GetWorldPosition(gridPosition);
+            Vector3 offset = selectedGridObject.GetCenterOffset(gridManager.cellSize);
+            selectedObject.transform.position = centerPosition + offset;
+        
+            // Update the object's record of occupied cells
+            selectedGridObject.UpdateCurrentGridPositions(gridPosition);
+        
+            wasPlaced = true;
+            Debug.Log($"Object placed at {gridPosition}, occupying {occupiedCells.Count} cells");
         }
         else
         {
-            gridManager.PlaceObject(selectedObject, originalGridPosition.x, originalGridPosition.y, objectSize.x, objectSize.y);
+            Debug.LogWarning($"Invalid placement at {gridPosition}!");
         }
-
-        Renderer renderer = selectedObject.GetComponent<Renderer>();
-        if (renderer != null)
+    
+        // If placement failed, return to original position
+        if (!wasPlaced)
         {
-            renderer.material = originalMaterial;
+            gridManager.PlaceObject(selectedObject, originalOccupiedCells);
+            selectedGridObject.UpdateCurrentGridPositions(originalGridPosition);
+            Debug.Log($"Object returned to original position at {originalGridPosition}");
         }
-
+        // Restore original materials
+        selectedGridObject.RestoreOriginalMaterials();
+        
+        // Clean up the preview object and reset state
         Destroy(previewObject);
-
+        gridManager.ResetAllCellVisuals();
+        
         isDragging = false;
         selectedObject = null;
-    }
-
-    Vector3 CalculateCenterPosition(int gridX, int gridZ, Vector2Int size)
-    {
-        GridObject gridObject = selectedObject.GetComponent<GridObject>();
-        Vector3 offset = gridObject.GetCenterOffset(gridManager.cellSize);
-        Vector3 centerPosition = gridManager.GetWorldPosition(gridX, gridZ) + offset + new Vector3((size.x - 1) * gridManager.cellSize / 2, 0, (size.y - 1) * gridManager.cellSize / 2);
-        return centerPosition;
+        selectedGridObject = null;
     }
 }

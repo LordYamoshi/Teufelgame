@@ -435,7 +435,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1053410307}
-  - component: {fileID: 1053410306}
+  - component: {fileID: 1053410309}
   - component: {fileID: 1053410308}
   m_Layer: 0
   m_Name: GridManager
@@ -444,26 +444,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1053410306
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1053410305}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7d69f574b72e6b4392781213625f8e0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  width: 10
-  depth: 10
-  cellSize: 1
-  gridOrigin: {x: 0, y: 0, z: 0}
-  gridColor: {r: 1, g: 1, b: 1, a: 0.5}
-  validPlacementColor: {r: 0, g: 1, b: 0, a: 1}
-  invalidPlacementColor: {r: 1, g: 0, b: 0, a: 1}
-  cellPrefab: {fileID: 4698441373383250086, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
 --- !u!4 &1053410307
 Transform:
   m_ObjectHideFlags: 0
@@ -492,10 +472,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 330585545}
+  gridManager: {fileID: 1053410309}
   highlightMaterial: {fileID: 2100000, guid: 35f89521db5520847867eddef5f8ef58, type: 2}
   validPositionMaterial: {fileID: 2100000, guid: 71c259ee618dca743a731cbbfbbb2b8a, type: 2}
   invalidPositionMaterial: {fileID: 2100000, guid: 0561241b890b30a42a5c2a03290a0c84, type: 2}
-  gridManager: {fileID: 1053410306}
+--- !u!114 &1053410309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1053410305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7d69f574b72e6b4392781213625f8e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxWidth: 5
+  maxDepth: 20
+  cellSize: 2
+  gridOrigin: {x: 0, y: 0, z: 0}
+  cellVisualPrefab: {fileID: 4698441373383250086, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
 --- !u!1 &1373230485
 GameObject:
   m_ObjectHideFlags: 0
@@ -617,8 +614,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74db20a996e40df4b8cbdd11346e5f52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 1
-  depth: 1
+  pivotCell: {x: 0, y: 0}
   validPlacementMaterial: {fileID: 2100000, guid: 71c259ee618dca743a731cbbfbbb2b8a, type: 2}
   invalidPlacementMaterial: {fileID: 2100000, guid: 0561241b890b30a42a5c2a03290a0c84, type: 2}
   selectedMaterial: {fileID: 2100000, guid: 35f89521db5520847867eddef5f8ef58, type: 2}
@@ -743,8 +739,9 @@ GameObject:
   - component: {fileID: 1847828426}
   - component: {fileID: 1847828425}
   - component: {fileID: 1847828429}
+  - component: {fileID: 1847828430}
   m_Layer: 6
-  m_Name: Cube (1)
+  m_Name: f
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -851,68 +848,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74db20a996e40df4b8cbdd11346e5f52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 1
-  depth: 1
+  pivotCell: {x: 0, y: 0}
   validPlacementMaterial: {fileID: 2100000, guid: 71c259ee618dca743a731cbbfbbb2b8a, type: 2}
   invalidPlacementMaterial: {fileID: 2100000, guid: 0561241b890b30a42a5c2a03290a0c84, type: 2}
   selectedMaterial: {fileID: 2100000, guid: 35f89521db5520847867eddef5f8ef58, type: 2}
---- !u!1001 &2126918422
-PrefabInstance:
+--- !u!114 &1847828430
+MonoBehaviour:
   m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4698441373383250086, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_Name
-      value: CellCubePrefab
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.7121544
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -3.729
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0.7591857
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4838260138793421822, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: d327466f3fe722b4993bf591af1b7648, type: 3}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1847828424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eebee81c2fc6f2d4290aa04a813da90b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -924,4 +875,3 @@ SceneRoots:
   - {fileID: 1053410307}
   - {fileID: 1373230489}
   - {fileID: 1847828428}
-  - {fileID: 2126918422}

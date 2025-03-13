@@ -91,8 +91,8 @@ MonoBehaviour:
     y: 0
     width: 1000
     height: 578
-  m_MinSize: {x: 1000, y: 526}
-  m_MaxSize: {x: 4000, y: 4026}
+  m_MinSize: {x: 1000, y: 500}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 20}
   m_Panes:
   - {fileID: 20}
@@ -424,8 +424,8 @@ MonoBehaviour:
     y: 0
     width: 608
     height: 1293
-  m_MinSize: {x: 276, y: 76}
-  m_MaxSize: {x: 4001, y: 4026}
+  m_MinSize: {x: 275, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 27}
   m_Panes:
   - {fileID: 27}
@@ -453,7 +453,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 900
+    y: 955
     width: 1951
     height: 391
   m_SerializedDataModeController:
@@ -673,8 +673,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Frame Debugger\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 0
-    y: 26
+    x: 4104
+    y: 60
     width: 1000
     height: 552
   m_SerializedDataModeController:
@@ -770,8 +770,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Game\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 0
-    y: 26
+    x: 2560
+    y: 23
     width: 2560
     height: 1343
   m_SerializedDataModeController:
@@ -872,7 +872,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 24
+    y: 79
     width: 475
     height: 850
   m_SerializedDataModeController:
@@ -889,9 +889,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
-      m_LastClickedID: 0
-      m_ExpandedIDs: 1cfbffff
+      m_SelectedIDs: e87be0fd
+      m_LastClickedID: -35619864
+      m_ExpandedIDs: bafafffff4fffffff8a4000016a50000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -937,8 +937,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Scene\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 477
-    y: 24
+    x: 476
+    y: 79
     width: 1474
     height: 850
   m_SerializedDataModeController:
@@ -1509,9 +1509,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 0.6293783, y: 3.5307055, z: 9.013658}
+    m_Target: {x: 1.3747609, y: -2.9006271, z: 1.747178}
     speed: 2
-    m_Value: {x: 0.6293783, y: 3.5307055, z: 9.013658}
+    m_Value: {x: 1.3747609, y: -2.9006271, z: 1.747178}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1557,9 +1557,9 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.044261545, y: -0.93157315, z: 0.33985332, w: -0.121398434}
+    m_Target: {x: 0.32389733, y: -0.63852507, z: 0.3387752, w: 0.6104386}
     speed: 2
-    m_Value: {x: 0.04426154, y: 0.93157315, z: -0.33985332, w: 0.12139843}
+    m_Value: {x: 0.32389286, y: -0.63851625, z: 0.3387705, w: 0.6104301}
   m_Size:
     m_Target: 7.071775
     speed: 2
@@ -1618,10 +1618,10 @@ MonoBehaviour:
     m_TextWithWhitespace: "Animator\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 477
+    x: 476
     y: 79
-    width: 1473
-    height: 845
+    width: 1474
+    height: 850
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1732,10 +1732,10 @@ MonoBehaviour:
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 98b50000
-    m_LastClickedID: 46488
-    m_ExpandedIDs: 0000000072a50000
+    scrollPos: {x: 0, y: 1}
+    m_SelectedIDs: 86a70000
+    m_LastClickedID: 42886
+    m_ExpandedIDs: 0000000072a500007ea7000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1790,8 +1790,8 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: d82dffff
-    m_LastClickedInstanceID: -53800
+    m_SelectedInstanceIDs: 16a50000
+    m_LastClickedInstanceID: 42262
     m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: c62300009e2d0200986b020022ff010008240100e0d20000dabb0000bab9000078eb000000000000
     m_RenameOverlay:
@@ -1821,7 +1821,7 @@ MonoBehaviour:
     m_ScrollPosition: {x: 0, y: 0}
     m_GridSize: 64
   m_SkipHiddenPackages: 0
-  m_DirectoriesAreaWidth: 207
+  m_DirectoriesAreaWidth: 208
 --- !u!114 &27
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -1843,8 +1843,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Inspector\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1953
-    y: 24
+    x: 1952
+    y: 79
     width: 607
     height: 1267
   m_SerializedDataModeController:
