@@ -1,14 +1,42 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
+using System;
 
+/// <summary>
+/// Represents objects that can be placed on the grid with specific shapes and properties
+/// </summary>
 public class GridObject : MonoBehaviour
 {
+    #region Properties and Fields
     [Header("Grid Properties")]
-    [Tooltip("Layout of the object represented as a 2D array. Use 1 for occupied cells, 0 for empty spaces.")]
+    [Tooltip("Layout of the object represented as a 2D array. 1 for occupied cells, 0 for empty spaces.")]
     [SerializeField] private int[,] objectLayout = { { 1 } }; // Default is a 1x1 object
     
     [Tooltip("The cell in the layout that serves as the reference point (pivot)")]
     [SerializeField] private Vector2Int pivotCell = Vector2Int.zero;
+    
+    [Header("Shape Settings")]
+    [Tooltip("Current shape type for this object")]
+    public ShapeType currentShapeType = ShapeType.Square;
+    
+    [Tooltip("Size of the shape (number of cells)")]
+    [Range(2, 5)]
+    public int shapeSize = 3;
+    
+    [Tooltip("Apply shape changes automatically in Play mode")]
+    public bool autoUpdateShape = false;
+    
+    [Header("Object Properties")]
+    [Tooltip("Can this object be moved after placement")]
+    public bool isMovable = true;
+    
+    [Tooltip("Can this object be destroyed")]
+    public bool isDestructible = true;
+    
+    [Tooltip("Current rotation of the object in 90-degree increments (0-3)")]
+    [Range(0, 3)]
+    public int rotationIndex = 0;
     
     [Header("Visualization")]
     [Tooltip("Material to use when the object placement is valid")]
@@ -20,45 +48,100 @@ public class GridObject : MonoBehaviour
     [Tooltip("Material to use when the object is selected")]
     public Material selectedMaterial;
     
+    [Header("Shape Serialization")]
+    [Tooltip("Folder to save/load shapes")]
+    public string saveFolder = "GridShapes";
+    
+    [Tooltip("Shape to load on start (if any)")]
+    public string loadShapeOnStart = "";
+    
     // List of relative cell positions this object occupies
-    private List<Vector2Int> relativeCellPositions = new List<Vector2Int>();
+    private List<Vector2Int> _relativeCellPositions = new List<Vector2Int>();
     
     // List of world positions this object occupies
-    private List<Vector2Int> currentGridPositions = new List<Vector2Int>();
+    private List<Vector2Int> _currentGridPositions = new List<Vector2Int>();
     
     // Original materials for restoration
-    private Material[] originalMaterials;
-    private Renderer[] objectRenderers;
+    private Material[] _originalMaterials;
+    private Renderer[] _objectRenderers;
     
+    // Last values for change detection
+    private ShapeType _lastShapeType;
+    private int _lastShapeSize;
+    private int _lastRotationIndex;
+    #endregion
     
+    #region Unity Lifecycle
     private void Awake()
     {
-        objectRenderers = GetComponentsInChildren<Renderer>();
-        originalMaterials = new Material[objectRenderers.Length];
-        
-        for (int i = 0; i < objectRenderers.Length; i++)
+        // Cache all renderers and their materials
+        _objectRenderers = GetComponentsInChildren<Renderer>();
+        _originalMaterials = new Material[_objectRenderers.Length];
+    
+        for (int i = 0; i < _objectRenderers.Length; i++)
         {
-            originalMaterials[i] = objectRenderers[i].material;
+            _originalMaterials[i] = _objectRenderers[i].sharedMaterial;
         }
-        
+    
+        // Store initial values for change detection
+        _lastShapeType = currentShapeType;
+        _lastShapeSize = shapeSize;
+        _lastRotationIndex = rotationIndex;
+    
         // Calculate the relative cell positions from the object layout
         CalculateRelativeCellPositions();
         
-        SetObjectLayout(new int[2,2],Vector2Int.zero);
+        // Create save directory if needed
+        EnsureSaveDirectoryExists();
     }
     
+    private void Start()
+    {
+        // Apply the initial shape if none is set
+        if (objectLayout.Length <= 1 && currentShapeType != ShapeType.Custom)
+        {
+            ApplyCurrentShape();
+        }
+        
+        // Load shape if specified
+        if (!string.IsNullOrEmpty(loadShapeOnStart))
+        {
+            LoadShape(loadShapeOnStart);
+        }
+    }
+    
+    private void Update()
+    {
+        if (!autoUpdateShape) return;
+        
+        // Check for shape or rotation changes
+        if (currentShapeType != _lastShapeType || 
+            shapeSize != _lastShapeSize || 
+            rotationIndex != _lastRotationIndex)
+        {
+            ApplyCurrentShape();
+            
+            // Update last values
+            _lastShapeType = currentShapeType;
+            _lastShapeSize = shapeSize;
+            _lastRotationIndex = rotationIndex;
+        }
+    }
+    #endregion
+    
+    #region Layout and Rotation Methods
     
     /// <summary>
-    /// Calculates all the relative grid cells this object occupies based on it's layout
+    /// Calculates all the relative grid cells this object occupies based on its layout and rotation
     /// </summary>
-    private void CalculateRelativeCellPositions()
+    public void CalculateRelativeCellPositions()
     {
-        relativeCellPositions.Clear();
+        _relativeCellPositions.Clear();
         
         // If the layout isn't specified, default to a 1x1 object
         if (objectLayout == null)
         {
-            relativeCellPositions.Add(Vector2Int.zero);
+            _relativeCellPositions.Add(Vector2Int.zero);
             return;
         }
         
@@ -73,53 +156,136 @@ public class GridObject : MonoBehaviour
                 {
                     // Calculate position relative to the pivot
                     Vector2Int relativePos = new Vector2Int(x, z) - pivotCell;
-                    relativeCellPositions.Add(relativePos);
+                    
+                    // Apply rotation
+                    relativePos = RotatePosition(relativePos, rotationIndex);
+                    
+                    _relativeCellPositions.Add(relativePos);
                 }
             }
         }
     }
-     
+    
+    /// <summary>
+    /// Rotates a position vector by a given number of 90-degree increments
+    /// </summary>
+    private Vector2Int RotatePosition(Vector2Int pos, int rotations)
+    {
+        Vector2Int rotated = pos;
+        
+        // Apply rotation (90 degree increments)
+        for (int i = 0; i < rotations; i++)
+        {
+            // 90 degree rotation: (x, y) -> (-y, x)
+            rotated = new Vector2Int(-rotated.y, rotated.x);
+        }
+        
+        return rotated;
+    }
+    
+    /// <summary>
+    /// Rotates the object by 90 degrees clockwise
+    /// </summary>
+    public void RotateClockwise()
+    {
+        rotationIndex = (rotationIndex + 1) % 4;
+        CalculateRelativeCellPositions();
+        
+        // Visual feedback - rotate the actual transform
+        transform.Rotate(0, 90, 0);
+    }
+    
     /// <summary>
     /// Sets the object's grid layout
     /// </summary>
-    /// <param name="newLayout"></param>
-    /// <param name="newPivot"></param>
     public void SetObjectLayout(int[,] newLayout, Vector2Int newPivot)
     {
+        if (newLayout == null || newLayout.Length == 0)
+        {
+            Debug.LogError("Cannot set null or empty layout");
+            return;
+        }
+        
         objectLayout = newLayout;
         pivotCell = newPivot;
         CalculateRelativeCellPositions();
     }
     
-    //Gets the world position of the object
+    /// <summary>
+    /// Applies the current shape settings to create a new layout
+    /// </summary>
+    public void ApplyCurrentShape()
+    {
+        // Create the shape layout
+        int[,] layout = CreateShape(currentShapeType, shapeSize);
+
+        // Calculate default pivot (center of the shape)
+        int width = layout.GetLength(0);
+        int height = layout.GetLength(1);
+        Vector2Int defaultPivot = new Vector2Int(width / 2, height / 2);
+        
+        // Set the layout
+        SetObjectLayout(layout, defaultPivot);
+    }
+    
+    /// <summary>
+    /// Apply a specific shape type
+    /// </summary>
+    public void SetShapeType(ShapeType shapeType, bool applyImmediately = true)
+    {
+        currentShapeType = shapeType;
+        
+        if (applyImmediately)
+        {
+            ApplyCurrentShape();
+        }
+    }
+    
+    /// <summary>
+    /// Set the shape size and optionally apply it immediately
+    /// </summary>
+    public void SetShapeSize(int size, bool applyImmediately = true)
+    {
+        shapeSize = Mathf.Clamp(size, 2, 5);
+        
+        if (applyImmediately)
+        {
+            ApplyCurrentShape();
+        }
+    }
+    #endregion
+    
+    #region Grid Positioning Methods
+    
+    /// <summary>
+    /// Gets the world position offset from the base grid position
+    /// </summary>
     public Vector3 GetCenterOffset(float cellSize)
     {
-        if (relativeCellPositions.Count == 0)
+        if (_relativeCellPositions.Count == 0)
         {
             return Vector3.zero;
         }
         
         // Calculate average position
         Vector2 sum = Vector2.zero;
-        foreach (var pos in relativeCellPositions)
+        foreach (var pos in _relativeCellPositions)
         {
             sum += new Vector2(pos.x, pos.y);
         }
         
-        Vector2 average = sum / relativeCellPositions.Count;
+        Vector2 average = sum / _relativeCellPositions.Count;
         return new Vector3(average.x * cellSize, 0, average.y * cellSize);
     }
     
     /// <summary>
     /// Gets the grid cells this object would occupy if placed at the specified grid position
     /// </summary>
-    /// <param name="baseGridPosition"></param>
-    /// <returns></returns>
     public List<Vector2Int> GetOccupiedCells(Vector2Int baseGridPosition)
     {
         List<Vector2Int> result = new List<Vector2Int>();
         
-        foreach (var relativePos in relativeCellPositions)
+        foreach (var relativePos in _relativeCellPositions)
         {
             Vector2Int worldGridPos = baseGridPosition + relativePos;
             result.Add(worldGridPos);
@@ -129,30 +295,107 @@ public class GridObject : MonoBehaviour
     }
     
     /// <summary>
+    /// Gets the edge cells of this object at the specified position
+    /// </summary>
+    public List<Vector2Int> GetEdgeCells(Vector2Int baseGridPosition)
+    {
+        List<Vector2Int> occupiedCells = GetOccupiedCells(baseGridPosition);
+        List<Vector2Int> edgeCells = new List<Vector2Int>();
+        
+        // For each occupied cell, check if any of its 4 neighbors is not occupied by this object
+        foreach (var cell in occupiedCells)
+        {
+            // Check each of the 4 adjacent cells
+            Vector2Int[] neighbors = new Vector2Int[]
+            {
+                new Vector2Int(cell.x + 1, cell.y),
+                new Vector2Int(cell.x - 1, cell.y),
+                new Vector2Int(cell.x, cell.y + 1),
+                new Vector2Int(cell.x, cell.y - 1)
+            };
+            
+            bool isEdge = false;
+            
+            foreach (var neighbor in neighbors)
+            {
+                // If the neighbor is not in our occupied list, this cell is an edge
+                if (!occupiedCells.Contains(neighbor))
+                {
+                    isEdge = true;
+                    break;
+                }
+            }
+            
+            if (isEdge)
+            {
+                edgeCells.Add(cell);
+            }
+        }
+        
+        return edgeCells;
+    }
+    
+    public void MarkAsImmovable()
+    {
+        isMovable = false;
+    
+        // Store original materials if needed for restoration later
+        if (_originalMaterials == null)
+        {
+            _objectRenderers = GetComponentsInChildren<Renderer>();
+            _originalMaterials = new Material[_objectRenderers.Length];
+        
+            for (int i = 0; i < _objectRenderers.Length; i++)
+            {
+                _originalMaterials[i] = _objectRenderers[i].sharedMaterial;
+            }
+        }
+    
+        // Apply visual indicator through material properties
+        foreach (var renderer in _objectRenderers)
+        {
+            renderer.material.EnableKeyword("_EMISSION");
+            renderer.material.SetColor("_EmissionColor", Color.red * 0.3f);
+        
+            if (renderer.material.HasProperty("_RimColor"))
+            {
+                renderer.material.SetColor("_RimColor", Color.red);
+                renderer.material.SetFloat("_RimPower", 3.0f);
+            }
+        
+            // Option 3: Tint the existing material slightly
+            Color baseColor = renderer.material.color;
+            renderer.material.color = Color.Lerp(baseColor, Color.red, 0.2f);
+        }
+    }
+    
+    /// <summary>
     /// Updates the current occupied grid positions
     /// </summary>
-    /// <param name="baseGridPosition"></param>
     public void UpdateCurrentGridPositions(Vector2Int baseGridPosition)
     {
-        currentGridPositions = GetOccupiedCells(baseGridPosition);
+        _currentGridPositions = GetOccupiedCells(baseGridPosition);
     }
     
     /// <summary>
     /// Gets the current grid positions of the object
     /// </summary>
-    /// <returns></returns>
     public List<Vector2Int> GetCurrentGridPositions()
     {
-        return currentGridPositions;
+        return new List<Vector2Int>(_currentGridPositions);
     }
+    #endregion
+    
+    #region Visualization Methods
     
     /// <summary>
     /// Sets all renderer's materials
     /// </summary>
-    /// <param name="material"></param>
     public void SetAllMaterials(Material material)
     {
-        foreach (var renderer in objectRenderers)
+        if (material == null) return;
+        
+        foreach (var renderer in _objectRenderers)
         {
             renderer.material = material;
         }
@@ -163,19 +406,105 @@ public class GridObject : MonoBehaviour
     /// </summary>
     public void RestoreOriginalMaterials()
     {
-        for (int i = 0; i < objectRenderers.Length; i++)
+        for (int i = 0; i < _objectRenderers.Length; i++)
         {
-            objectRenderers[i].material = originalMaterials[i];
+            if (i < _originalMaterials.Length)
+            {
+                _objectRenderers[i].material = _originalMaterials[i];
+            }
         }
     }
+    #endregion
+    
+    #region Layout Access Methods
     
     /// <summary>
-    /// Creates common object shapes for convenience
+    /// Gets a copy of the current layout
     /// </summary>
-    /// <param name="shapeType">Type of shape</param>
-    /// <param name="size"></param>
-    /// <returns></returns>
-    public static int[,] CreateShape(ShapeType shapeType, int size = 2)
+    public int[,] GetCurrentLayout()
+    {
+        if (objectLayout == null)
+        {
+            return new int[,] { { 1 } };
+        }
+    
+        int width = objectLayout.GetLength(0);
+        int height = objectLayout.GetLength(1);
+        int[,] layoutCopy = new int[width, height];
+    
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                layoutCopy[x, y] = objectLayout[x, y];
+            }
+        }
+    
+        return layoutCopy;
+    }
+
+    /// <summary>
+    /// Gets the current pivot cell position
+    /// </summary>
+    public Vector2Int GetCurrentPivot()
+    {
+        return pivotCell;
+    }
+
+    /// <summary>
+    /// Copies the layout from another GridObject
+    /// </summary>
+    public void CopyLayoutFrom(GridObject otherGridObject)
+    {
+        if (otherGridObject == null) return;
+    
+        // Copy shape properties
+        currentShapeType = otherGridObject.currentShapeType;
+        shapeSize = otherGridObject.shapeSize;
+        rotationIndex = otherGridObject.rotationIndex;
+    
+        // Copy the layout
+        int[,] sourceLayout = otherGridObject.GetCurrentLayout();
+        Vector2Int sourcePivot = otherGridObject.GetCurrentPivot();
+    
+        // Apply to this object
+        SetObjectLayout(sourceLayout, sourcePivot);
+    }
+    #endregion
+    
+    #region Object Management Methods
+    
+    /// <summary>
+    /// Destroys the object and updates the grid
+    /// </summary>
+    public void DestroyObject(GridManager gridManager)
+    {
+        if (gridManager == null)
+        {
+            Debug.LogError("Cannot destroy object without GridManager reference");
+            return;
+        }
+        
+        if (!isDestructible)
+        {
+            Debug.LogWarning($"Cannot destroy {gameObject.name} as it is marked as indestructible");
+            return;
+        }
+        
+        // Remove from grid
+        gridManager.RemoveObject(gameObject, _currentGridPositions);
+        
+        // Destroy the GameObject
+        Destroy(gameObject);
+    }
+    #endregion
+    
+    #region Shape Creation Methods
+    
+    /// <summary>
+    /// Creates common object shapes
+    /// </summary>
+    public static int[,] CreateShape(ShapeType shapeType, int size = 3)
     {
         switch (shapeType)
         {
@@ -194,9 +523,11 @@ public class GridObject : MonoBehaviour
         }
     }
     
-      private static int[,] CreateSquareShape(int size)
+    private static int[,] CreateSquareShape(int size)
     {
+        size = Mathf.Max(2, size); // Ensure minimum size
         int[,] layout = new int[size, size];
+        
         for (int x = 0; x < size; x++)
         {
             for (int z = 0; z < size; z++)
@@ -209,7 +540,10 @@ public class GridObject : MonoBehaviour
     
     private static int[,] CreateRectangleShape(int width, int height)
     {
+        width = Mathf.Max(2, width);
+        height = Mathf.Max(2, height);
         int[,] layout = new int[width, height];
+        
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
@@ -222,20 +556,20 @@ public class GridObject : MonoBehaviour
     
     private static int[,] CreateLShape(int size)
     {
+        size = Mathf.Max(2, size);
         int[,] layout = new int[size, size];
         
         // Create the L shape
         for (int x = 0; x < size; x++)
         {
-            layout[0, x] = 1; // Vertical part
-            
-            if (x == 0)
-            {
-                for (int z = 0; z < size; z++)
-                {
-                    layout[z, 0] = 1; // Horizontal part
-                }
-            }
+            // Vertical part
+            layout[0, x] = 1;
+        }
+        
+        // Horizontal part
+        for (int x = 0; x < size; x++)
+        {
+            layout[x, 0] = 1;
         }
         
         return layout;
@@ -243,6 +577,7 @@ public class GridObject : MonoBehaviour
     
     private static int[,] CreateTShape(int size)
     {
+        size = Mathf.Max(3, size);
         int[,] layout = new int[size, size];
         
         // Create the T shape
@@ -266,6 +601,7 @@ public class GridObject : MonoBehaviour
     
     private static int[,] CreateCrossShape(int size)
     {
+        size = Mathf.Max(3, size);
         int[,] layout = new int[size, size];
         int center = size / 2;
         
@@ -279,12 +615,236 @@ public class GridObject : MonoBehaviour
         return layout;
     }
     
-    [SerializeField] public enum ShapeType
+    /// <summary>
+    /// Applies a custom layout to the object
+    /// </summary>
+    public void SetCustomLayout(int[,] customLayout, Vector2Int pivot)
+    {
+        if (customLayout == null || customLayout.Length == 0)
+        {
+            Debug.LogError("Cannot set null or empty custom layout");
+            return;
+        }
+        
+        // Set the shape type to Custom since we're applying a custom layout
+        currentShapeType = ShapeType.Custom;
+        
+        // Apply the layout
+        SetObjectLayout(customLayout, pivot);
+    }
+    #endregion
+    
+    #region Shape Serialization
+    
+    /// <summary>
+    /// Ensures that the save directory exists
+    /// </summary>
+    private void EnsureSaveDirectoryExists()
+    {
+        string savePath = Path.Combine(Application.persistentDataPath, saveFolder);
+        if (!Directory.Exists(savePath))
+        {
+            Directory.CreateDirectory(savePath);
+        }
+    }
+    
+    /// <summary>
+    /// Saves the current shape to a file
+    /// </summary>
+    public bool SaveShape(string shapeName)
+    {
+        if (string.IsNullOrEmpty(shapeName))
+        {
+            Debug.LogError("Cannot save shape with empty name");
+            return false;
+        }
+    
+        try
+        {
+            // Ensure we have a valid layout
+            if (objectLayout == null || objectLayout.Length <= 1)
+            {
+                Debug.LogError("Cannot save empty or invalid layout");
+                return false;
+            }
+        
+            EnsureSaveDirectoryExists();
+        
+            // Get dimensions first
+            int width = objectLayout.GetLength(0);
+            int height = objectLayout.GetLength(1);
+        
+            // Create shape data for serialization
+            ShapeData data = new ShapeData
+            {
+                width = width,
+                height = height,
+                pivotX = pivotCell.x,
+                pivotY = pivotCell.y,
+                shapeType = (int)currentShapeType,
+                rotationIndex = rotationIndex,
+                layoutData = new int[width * height]
+            };
+        
+            // Flatten the layout
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int index = y * width + x;
+                    data.layoutData[index] = objectLayout[x, y];
+                }
+            }
+        
+            // Serialize to JSON
+            string json = JsonUtility.ToJson(data, true);
+        
+            // Save to file
+            string savePath = Path.Combine(Application.persistentDataPath, saveFolder);
+            string filePath = Path.Combine(savePath, $"{shapeName}.json");
+            File.WriteAllText(filePath, json);
+        
+            Debug.Log($"Shape saved to: {filePath}");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error saving shape: {e.Message}");
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Loads a shape from a file
+    /// </summary>
+    public bool LoadShape(string shapeName)
+    {
+        if (string.IsNullOrEmpty(shapeName))
+        {
+            Debug.LogError("Cannot load shape with empty name");
+            return false;
+        }
+        
+        try
+        {
+            string savePath = Path.Combine(Application.persistentDataPath, saveFolder);
+            string filePath = Path.Combine(savePath, $"{shapeName}.json");
+            
+            if (!File.Exists(filePath))
+            {
+                Debug.LogError($"Shape file not found: {filePath}");
+                return false;
+            }
+            
+            // Read JSON
+            string json = File.ReadAllText(filePath);
+            ShapeData data = JsonUtility.FromJson<ShapeData>(json);
+            
+            if (data == null || data.layoutData == null)
+            {
+                Debug.LogError("Failed to parse shape data");
+                return false;
+            }
+            
+            // Create the layout
+            int[,] layout = new int[data.width, data.height];
+            
+            // Unflatten the layout
+            for (int y = 0; y < data.height; y++)
+            {
+                for (int x = 0; x < data.width; x++)
+                {
+                    int index = y * data.width + x;
+                    if (index < data.layoutData.Length)
+                    {
+                        layout[x, y] = data.layoutData[index];
+                    }
+                }
+            }
+            
+            // Set the pivot
+            Vector2Int pivot = new Vector2Int(data.pivotX, data.pivotY);
+            
+            // Apply to grid object
+            SetObjectLayout(layout, pivot);
+            
+            // Set shape type and rotation
+            currentShapeType = (ShapeType)data.shapeType;
+            rotationIndex = data.rotationIndex;
+            
+            // Apply rotation visually
+            transform.rotation = Quaternion.Euler(0, rotationIndex * 90, 0);
+            
+            Debug.Log($"Shape '{shapeName}' loaded successfully");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error loading shape: {e.Message}");
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Gets a list of all saved shapes
+    /// </summary>
+    public string[] GetSavedShapes()
+    {
+        List<string> shapes = new List<string>();
+        
+        try
+        {
+            string savePath = Path.Combine(Application.persistentDataPath, saveFolder);
+            
+            if (!Directory.Exists(savePath))
+            {
+                Directory.CreateDirectory(savePath);
+                return shapes.ToArray();
+            }
+            
+            // Get all JSON files
+            string[] files = Directory.GetFiles(savePath, "*.json");
+            
+            foreach (string file in files)
+            {
+                shapes.Add(Path.GetFileNameWithoutExtension(file));
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error getting saved shapes: {e.Message}");
+        }
+        
+        return shapes.ToArray();
+    }
+    #endregion
+    
+    /// <summary>
+    /// Shape types available for grid objects
+    /// </summary>
+    [System.Serializable]
+    public enum ShapeType
     {
         Square,
         Rectangle,
         L,
         T,
-        Cross
+        Cross,
+        Custom
     }
+}
+
+/// <summary>
+/// Data class for serializing shapes
+/// </summary>
+[System.Serializable]
+public class ShapeData
+{
+    public int width;
+    public int height;
+    public int pivotX;
+    public int pivotY;
+    public int shapeType;
+    public int rotationIndex;
+    public int[] layoutData;
 }
