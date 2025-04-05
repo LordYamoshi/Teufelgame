@@ -1165,9 +1165,9 @@ RectTransform:
   - {fileID: 1632666413}
   m_Father: {fileID: 953956901}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: -1280, y: 661}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &886210789
@@ -1497,6 +1497,21 @@ MonoBehaviour:
   placementSuccessSound: {fileID: 0}
   placementErrorSound: {fileID: 0}
   objectHeightOffset: 0.1
+  OnBuildingPlaced:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1350008880}
+        m_TargetAssemblyTypeName: GameStateManager, Assembly-CSharp
+        m_MethodName: OnBuildingPlaced
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1053410309
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1832,8 +1847,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1350008879}
   - component: {fileID: 1350008878}
+  - component: {fileID: 1350008880}
   m_Layer: 0
-  m_Name: Buying Manager
+  m_Name: GameManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1888,7 +1904,19 @@ MonoBehaviour:
       m_Calls: []
   OnNextBuildingChanged:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1350008880}
+        m_TargetAssemblyTypeName: GameStateManager, Assembly-CSharp
+        m_MethodName: CheckGameState
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   OnCanAffordChanged:
     m_PersistentCalls:
       m_Calls:
@@ -1912,6 +1940,7 @@ MonoBehaviour:
     description: 
   _buildingSequence: 
   _currentBuildingIndex: 0
+  _currentPlacementObject: {fileID: 0}
 --- !u!4 &1350008879
 Transform:
   m_ObjectHideFlags: 0
@@ -1927,6 +1956,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1350008880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1350008877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcdeb6b8c4d927f4ba1e4689e279a4dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shopManager: {fileID: 1350008878}
+  gridManager: {fileID: 1053410309}
+  dragAndDropManager: {fileID: 1053410308}
+  winPanel: {fileID: 680392390}
+  losePanel: {fileID: 665768817}
+  OnGameWin:
+    m_PersistentCalls:
+      m_Calls: []
+  OnGameLose:
+    m_PersistentCalls:
+      m_Calls: []
+  checkDelay: 0.5
+  autoCheckAfterPlacement: 1
 --- !u!1 &1368286310
 GameObject:
   m_ObjectHideFlags: 0
@@ -2247,63 +2301,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1494756281}
   m_CullTransparentMesh: 1
---- !u!1 &1627306377
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1627306379}
-  - component: {fileID: 1627306378}
-  m_Layer: 0
-  m_Name: GameStateManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1627306378
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1627306377}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bcdeb6b8c4d927f4ba1e4689e279a4dc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  shopManager: {fileID: 1350008878}
-  gridManager: {fileID: 1053410309}
-  dragAndDropManager: {fileID: 1053410308}
-  winPanel: {fileID: 680392390}
-  losePanel: {fileID: 665768817}
-  OnGameWin:
-    m_PersistentCalls:
-      m_Calls: []
-  OnGameLose:
-    m_PersistentCalls:
-      m_Calls: []
-  checkDelay: 0.5
-  autoCheckAfterPlacement: 1
---- !u!4 &1627306379
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1627306377}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.7312903, y: 5.2168474, z: -0.15400407}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1632666412
 GameObject:
   m_ObjectHideFlags: 0
@@ -2769,7 +2766,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1942279546}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1350008880}
+        m_TargetAssemblyTypeName: GameStateManager, Assembly-CSharp
+        m_MethodName: LogDebugInfo
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1942279546
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2962,4 +2971,3 @@ SceneRoots:
   - {fileID: 953956901}
   - {fileID: 1210393050}
   - {fileID: 1211241671}
-  - {fileID: 1627306379}

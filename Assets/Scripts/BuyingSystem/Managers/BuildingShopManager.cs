@@ -42,8 +42,8 @@ public class BuildingShopManager : MonoBehaviour
     [HideInInspector] public BuildingOption _currentDisplayedBuilding = null;
     [HideInInspector] public List<int> _buildingSequence = new List<int>();
     [HideInInspector] public int _currentBuildingIndex = 0;
-
-    private GameObject _currentPlacementObject = null;
+    [HideInInspector] public GameObject _currentPlacementObject = null;
+    
     private int _currentCurrency;
     private bool _isInitialized = false;
     private bool _processingPurchase = false;

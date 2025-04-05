@@ -43,7 +43,6 @@ public class BuildingShopUI : MonoBehaviour
     
     private void Start()
     {
-        // Initialize UI
         UpdateCurrencyDisplay(shopManager ? shopManager.CurrentCurrency : 0);
     }
     
@@ -59,13 +58,11 @@ public class BuildingShopUI : MonoBehaviour
     
     private void OnCurrencyChanged(int newAmount)
     {
-        // Update currency display
         UpdateCurrencyDisplay(newAmount);
     }
     
     private void OnCanAffordChanged(bool canAfford)
     {
-        // Update buy button state
         if (buyButton != null)
         {
             buyButton.interactable = canAfford;

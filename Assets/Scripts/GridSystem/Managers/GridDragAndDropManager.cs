@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.Events;
 
 /// <summary>
 /// Manages the drag and drop interaction with grid objects
@@ -63,7 +64,9 @@ public class GridDragAndDropManager : MonoBehaviour
     [Tooltip("Height offset for placed objects")]
     public float objectHeightOffset = 0.1f;
     
-    // State tracking
+    [Header("Events")]
+    public UnityEvent OnBuildingPlaced;
+    
     private GameObject _selectedObject;
     private GridObject _selectedGridObject;
     private GameObject _previewObject;
@@ -71,21 +74,17 @@ public class GridDragAndDropManager : MonoBehaviour
     private GameObject _currentlySelectedObject;
     private GameObject _placementObject;
     
-    // Dragging state
     private bool _isDragging = false;
     private Vector2Int _originalGridPosition;
     private List<Vector2Int> _originalOccupiedCells = new List<Vector2Int>();
-    
-    // Placement state
+
     private bool _isInPlacementMode = false;
     private bool _isValidPlacement = false;
     
-    // Object original state
     private int[,] _originalLayout;
     private Vector2Int _originalPivot;
     private int _originalRotation;
     
-    // Audio
     private AudioSource _audioSource;
     #endregion
     
@@ -638,6 +637,8 @@ public class GridDragAndDropManager : MonoBehaviour
         
             // Place at new position
             gridManager.PlaceObject(_selectedObject, occupiedCells);
+            
+            OnBuildingPlaced?.Invoke();
 
             // Update the object's position in the world
             Vector3 centerPosition = gridManager.GetWorldPosition(gridPosition);
@@ -652,10 +653,12 @@ public class GridDragAndDropManager : MonoBehaviour
 
             wasPlaced = true;
             Debug.Log($"Object placed at {gridPosition}, occupying {occupiedCells.Count} cells with rotation {_selectedGridObject.rotationIndex}");
-        
+
             // Play success sound and effect
             PlaySound(placementSuccessSound);
             SpawnPlacementEffect(centerPosition);
+            
+            OnBuildingPlaced?.Invoke();
         }
         else
         {
@@ -713,6 +716,8 @@ public class GridDragAndDropManager : MonoBehaviour
 
             // Place the object on the grid
             gridManager.PlaceObject(_placementObject, occupiedCells);
+            
+            OnBuildingPlaced?.Invoke();
 
             // Update the object's record of occupied cells
             _previewGridObject.UpdateCurrentGridPositions(gridPosition);
@@ -731,6 +736,7 @@ public class GridDragAndDropManager : MonoBehaviour
             Vector3 centerPosition = gridManager.GetWorldPosition(gridPosition);
             SpawnPlacementEffect(centerPosition);
 
+            
             // Reset placement mode but keep the object
             _previewObject = null;
             _previewGridObject = null;

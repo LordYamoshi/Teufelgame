@@ -31,36 +31,30 @@ public class GameStateManager : MonoBehaviour
         if (winPanel != null) winPanel.SetActive(false);
         if (losePanel != null) losePanel.SetActive(false);
         
+        // Auto-find references if needed
         if (shopManager == null) shopManager = FindObjectOfType<BuildingShopManager>();
         if (gridManager == null) gridManager = FindObjectOfType<GridManager>();
         if (dragAndDropManager == null) dragAndDropManager = FindObjectOfType<GridDragAndDropManager>();
         
+        // Listen for building placement events
+        if (dragAndDropManager != null)
+        {
+            dragAndDropManager.OnBuildingPlaced.AddListener(OnBuildingPlaced);
+        }
+        
+        // Listen for building purchase events to check if there are more buildings
         if (shopManager != null)
         {
             shopManager.OnBuildingPurchased.AddListener(OnBuildingPurchased);
-            shopManager.OnNextBuildingChanged.AddListener(OnNextBuildingChanged);
         }
     }
     
     private void OnBuildingPurchased(BuildingShopManager.BuildingOption building)
     {
+        // When a building is purchased, we'll check for placement possibilities after it's placed
         if (autoCheckAfterPlacement)
         {
             StartCoroutine(CheckAfterPlacementDelay());
-        }
-    }
-    
-    private void OnNextBuildingChanged(BuildingShopManager.BuildingOption building)
-    {
-        // Check if this is the last building and we've placed it
-        if (shopManager._currentBuildingIndex >= shopManager._buildingSequence.Count && 
-            !shopManager.loopBuildings)
-        {
-            Win();
-        }
-        else
-        {
-            StartCoroutine(CheckCanPlaceCurrentBuilding());
         }
     }
     
@@ -69,35 +63,80 @@ public class GameStateManager : MonoBehaviour
         // Wait a moment to allow the placement to complete
         yield return new WaitForSeconds(checkDelay);
         
-        // Now check if the next building can be placed
-        CheckCanPlaceCurrentBuilding();
+        // Check if the building was successfully placed
+        if (shopManager._currentPlacementObject == null)
+        {
+            CheckForVictory();
+
+            if (!_gameEnded)
+            {
+                CheckCanPlaceCurrentBuilding();
+            }
+        }
+    }
+    
+    // This should be called from GridDragAndDropManager after a building is placed
+    public void OnBuildingPlaced()
+    {
+        StartCoroutine(DelayedCheckAfterPlacement());
+    }
+    
+    private IEnumerator DelayedCheckAfterPlacement()
+    {
+        // Wait a moment for everything to update
+        yield return new WaitForSeconds(0.5f);
+        
+        //Check if the building was actually placed
+        if (shopManager._currentPlacementObject == null)
+        {
+            CheckForVictory();
+        }
+
+        // If we haven't won, check if the next building can be placed
+        if (!_gameEnded)
+        {
+            CheckCanPlaceCurrentBuilding();
+        }
+    }
+    
+    private void CheckForVictory()
+    {
+        if (shopManager != null && 
+            shopManager._currentBuildingIndex >= shopManager._buildingSequence.Count && 
+            !shopManager.loopBuildings && 
+            shopManager._currentPlacementObject == null)
+        {
+            Win();
+        }
     }
     
     public void CheckGameState()
     {
         if (_gameEnded) return;
         
-        StartCoroutine(CheckCanPlaceCurrentBuilding());
+        CheckForVictory();
+        
+        if (!_gameEnded)
+        {
+            CheckCanPlaceCurrentBuilding();
+        }
     }
     
-    private IEnumerator CheckCanPlaceCurrentBuilding()
+    private void CheckCanPlaceCurrentBuilding()
     {
-        yield return null;
-        
         // If there are no more buildings, the player has won
         if (shopManager._currentBuildingIndex >= shopManager.availableBuildings.Count && 
             !shopManager.loopBuildings)
         {
             Win();
-            yield break;
+            return;
         }
         
         // Get current building
         BuildingShopManager.BuildingOption currentBuilding = shopManager._currentDisplayedBuilding;
         if (currentBuilding == null || currentBuilding.buildingPrefab == null)
         {
-            Debug.LogWarning("No current building to check.");
-            yield break;
+            return;
         }
         
         // Temporarily create the building prefab to check its shape
@@ -107,9 +146,8 @@ public class GameStateManager : MonoBehaviour
         GridObject gridObject = tempBuilding.GetComponent<GridObject>();
         if (gridObject == null)
         {
-            Debug.LogError("Building prefab does not have a GridObject component!");
             Destroy(tempBuilding);
-            yield break;
+            return;
         }
         
         // Check all grid positions for potential placement
@@ -161,7 +199,6 @@ public class GameStateManager : MonoBehaviour
     {
         if (_gameEnded) return;
         
-        Debug.Log("Game Win! All buildings have been placed successfully.");
         _gameEnded = true;
         
         // Show win UI
@@ -175,7 +212,6 @@ public class GameStateManager : MonoBehaviour
     {
         if (_gameEnded) return;
         
-        Debug.Log("Game Over! Building cannot be placed anywhere on the grid.");
         _gameEnded = true;
         
         // Show lose UI
@@ -183,10 +219,5 @@ public class GameStateManager : MonoBehaviour
         
         // Trigger event
         OnGameLose?.Invoke();
-    }
-    
-    public void ForceCheckPlacement()
-    {
-        CheckGameState();
     }
 }
