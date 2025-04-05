@@ -182,6 +182,35 @@ public class GridDragAndDropManager : MonoBehaviour
         }
     }
     
+    public void StartDraggingExistingObject(GameObject existingObject)
+    {
+        if (existingObject == null)
+        {
+            Debug.LogError("Cannot start dragging null object");
+            return;
+        }
+
+        // Cancel any existing placement or dragging
+        CancelPlacement();
+    
+        // Set as the selected object
+        _selectedObject = existingObject;
+        _selectedGridObject = existingObject.GetComponent<GridObject>();
+    
+        if (_selectedGridObject == null)
+        {
+            Debug.LogError("Selected object does not have a GridObject component");
+            return;
+        }
+    
+        // Store original grid position and occupied cells
+        _originalGridPosition = gridManager.GetGridPosition(_selectedObject.transform.position);
+        _originalOccupiedCells = _selectedGridObject.GetCurrentGridPositions();
+    
+        // Start dragging the object
+        StartDragging();
+    }
+    
     private void HandlePlacementModeUpdate()
     {
         // Update placement preview
