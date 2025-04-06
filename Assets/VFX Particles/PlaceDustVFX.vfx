@@ -38,9 +38,9 @@ MonoBehaviour:
   uiBounds:
     serializedVersion: 2
     x: 264
-    y: 294
-    width: 476
-    height: 2305
+    y: 295
+    width: 475
+    height: 2310
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -2767,7 +2767,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":7.0,"y":7.0,"z":7.0}'
+      m_SerializableObject: '{"x":3.0,"y":3.0,"z":3.0}'
     m_Space: -1
   m_Property:
     name: _Scale
@@ -2965,7 +2965,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":1023.9998779296875,"y":1023.9998779296875,"z":1023.9998779296875}'
+      m_SerializableObject: '{"x":1024.0,"y":1023.9998779296875,"z":1023.9998779296875}'
     m_Space: -1
   m_Property:
     name: _Color

@@ -14,7 +14,7 @@ public class GridCell
     public GameObject CellVisual { get; private set; }
 
     // Visual state constants
-    private Color _normalColor = Color.white;
+    private Color _normalColor = Color.black;
     private Color _validPlacementColor = Color.green;
     private Color _invalidPlacementColor = Color.red;
     private Color _occupiedColor = Color.gray;
