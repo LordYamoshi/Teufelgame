@@ -49,7 +49,7 @@ public class PreplacedGridObjectsManager : MonoBehaviour
             if (objectData.prefab == null) continue;
 
             // Instantiate the object
-            GameObject gridObj = Instantiate(objectData.prefab, Vector3.zero, Quaternion.identity);
+            GameObject gridObj = Instantiate(objectData.prefab);
             gridObj.name = objectData.prefab.name + " (Preplaced)";
             gridObj.transform.parent = transform;
 
@@ -66,12 +66,26 @@ public class PreplacedGridObjectsManager : MonoBehaviour
             grid.isMovable = objectData.isMovable;
             grid.isDestructible = objectData.isDestructible;
 
-            // Calculate world position from grid position
-            Vector3 worldPos = gridManager.GetWorldPosition(objectData.gridPosition);
+            // Calculate world position from grid position with height offset
+            Vector3 worldPos;
+
+            // Check if we should apply height offset to preplaced objects
+            if (gridManager.applyHeightOffsetToPreplaced)
+            {
+                worldPos = gridManager.GetWorldPositionWithOffset(objectData.gridPosition);
+            }
+            else
+            {
+                worldPos = gridManager.GetWorldPosition(objectData.gridPosition);
+            }
+
             gridObj.transform.position = worldPos;
 
-            // Set rotation
-            gridObj.transform.rotation = Quaternion.Euler(0, objectData.rotationIndex * 90, 0);
+            gridObj.transform.rotation = Quaternion.Euler(
+                gridObj.transform.rotation.eulerAngles.x,
+                objectData.rotationIndex * 90,
+                0
+            );
             grid.rotationIndex = objectData.rotationIndex;
 
             // If it's a custom shape, try to load it
@@ -83,13 +97,20 @@ public class PreplacedGridObjectsManager : MonoBehaviour
             // Get the cells this object would occupy
             List<Vector2Int> occupiedCells = grid.GetOccupiedCells(objectData.gridPosition);
 
-            // Place on grid
-            gridManager.PlaceObject(gridObj, occupiedCells);
+            // Place on grid - pass isPreplaced = true to indicate this is a preplaced object
+            gridManager.PlaceObject(gridObj, occupiedCells, true);
 
             // Update the grid object's record
             grid.UpdateCurrentGridPositions(objectData.gridPosition);
         }
+
+        // Log the result for debugging
+        int playerObjCount = gridManager.GetPlayerPlacedObjectCount();
+        int preplacedCount = preplacedObjects.Count;
+        Debug.Log(
+            $"Placed {preplacedCount} preplaced objects - Player objects: {playerObjCount} - FirstObjectPlaced: {gridManager.FirstObjectPlaced}");
     }
+
 
 #if UNITY_EDITOR
     /// <summary>
@@ -173,25 +194,22 @@ public class PreplacedGridObjectsManager : MonoBehaviour
 [System.Serializable]
 public class PreplacedGridObjectData
 {
-    [Tooltip("Prefab to instantiate")]
-    public GameObject prefab;
-    
-    [Tooltip("Position on the grid")]
-    public Vector2Int gridPosition;
-    
-    [Tooltip("Rotation index (0-3, multiplied by 90 degrees)")]
-    [Range(0, 3)]
+    [Tooltip("Prefab to instantiate")] public GameObject prefab;
+
+    [Tooltip("Position on the grid")] public Vector2Int gridPosition;
+
+    [Tooltip("Rotation index (0-3, multiplied by 90 degrees)")] [Range(0, 3)]
     public int rotationIndex;
-    
+
     [Tooltip("Can this object be moved after placement?")]
     public bool isMovable = false;
-    
+
     [Tooltip("Can this object be destroyed?")]
     public bool isDestructible = true;
-    
+
     [Tooltip("Use a custom shape instead of the prefab's default")]
     public bool useCustomShape = false;
-    
+
     [Tooltip("Name of the custom shape to load")]
     public string customShapeName = "";
 }

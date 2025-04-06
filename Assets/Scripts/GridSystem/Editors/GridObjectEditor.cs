@@ -610,21 +610,21 @@ public class GridObjectEditor : Editor
         EditorGUILayout.HelpBox("Left-click to add cells, right-click to remove cells.", MessageType.Info);
     }
     
-    private void UpdatePreviewFromCustomGrid()
-    {
-        if (customGridData == null) return;
-        
-        // Create a copy of the custom grid for preview
-        previewLayout = new int[customGridWidth, customGridHeight];
-        
-        for (int x = 0; x < customGridWidth; x++)
+        private void UpdatePreviewFromCustomGrid()
         {
-            for (int y = 0; y < customGridHeight; y++)
+            if (customGridData == null) return;
+            
+            // Create a copy of the custom grid for preview
+            previewLayout = new int[customGridWidth, customGridHeight];
+            
+            for (int x = 0; x < customGridWidth; x++)
             {
-                previewLayout[x, y] = customGridData[x, y];
+                for (int y = 0; y < customGridHeight; y++)
+                {
+                    previewLayout[x, y] = customGridData[x, y];
+                }
             }
         }
-    }
     
     private void UpdateCustomGridFromGridObject(GridObject gridObject)
     {

@@ -8,10 +8,19 @@ using System;
 /// </summary>
 public class GridObject : MonoBehaviour
 {
+    private Vector2Int[] rotationMatrices = new Vector2Int[]
+    {
+        new Vector2Int(1, 0), 
+        new Vector2Int(0, 1),  
+        new Vector2Int(-1, 0),
+        new Vector2Int(0, -1)  
+    };
+
+    
     #region Properties and Fields
     [Header("Grid Properties")]
     [Tooltip("Layout of the object represented as a 2D array. 1 for occupied cells, 0 for empty spaces.")]
-    [SerializeField] private int[,] objectLayout = { { 1 } }; // Default is a 1x1 object
+    [SerializeField] private int[,] objectLayout = {{1}};
     
     [Tooltip("The cell in the layout that serves as the reference point (pivot)")]
     [SerializeField] private Vector2Int pivotCell = Vector2Int.zero;
@@ -55,17 +64,20 @@ public class GridObject : MonoBehaviour
     [Tooltip("Shape to load on start (if any)")]
     public string loadShapeOnStart = "";
     
-    // List of relative cell positions this object occupies
     private List<Vector2Int> _relativeCellPositions = new List<Vector2Int>();
-    
-    // List of world positions this object occupies
+
     private List<Vector2Int> _currentGridPositions = new List<Vector2Int>();
     
-    // Original materials for restoration
     private Material[] _originalMaterials;
     private Renderer[] _objectRenderers;
+
+    [HideInInspector] public Vector3 visualOffset = Vector3.zero;
+    private bool _isInitialized = false;
     
-    // Last values for change detection
+    private int[,] _originalLayout;
+    private Vector2Int _originalPivot;
+    private int _originalRotation;
+    
     private ShapeType _lastShapeType;
     private int _lastShapeSize;
     private int _lastRotationIndex;
@@ -97,9 +109,11 @@ public class GridObject : MonoBehaviour
     
     private void Start()
     {
+        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, rotationIndex * 90, 0);
+        
         // Apply the initial shape if none is set
         if (objectLayout.Length <= 1 && currentShapeType != ShapeType.Custom)
-        {
+        { 
             ApplyCurrentShape();
         }
         
@@ -129,7 +143,23 @@ public class GridObject : MonoBehaviour
     }
     #endregion
     
+    
     #region Layout and Rotation Methods
+    
+    private void InitializeWithDefaults()
+    {
+        if (_isInitialized) return;
+    
+        // Store initial values for layout and pivot
+        _originalLayout = GetCurrentLayout();
+        _originalPivot = GetCurrentPivot();
+        _originalRotation = rotationIndex;
+    
+        // Mark as initialized
+        _isInitialized = true;
+    
+        Debug.Log($"Initialized {gameObject.name} with rotation {rotationIndex}, pivot {pivotCell}");
+    }
     
     /// <summary>
     /// Calculates all the relative grid cells this object occupies based on its layout and rotation
@@ -137,50 +167,59 @@ public class GridObject : MonoBehaviour
     public void CalculateRelativeCellPositions()
     {
         _relativeCellPositions.Clear();
-        
+
         // If the layout isn't specified, default to a 1x1 object
         if (objectLayout == null)
         {
             _relativeCellPositions.Add(Vector2Int.zero);
             return;
         }
-        
+
         int width = objectLayout.GetLength(0);
         int height = objectLayout.GetLength(1);
-        
+    
+        Debug.Log($"Calculating positions for rotation {rotationIndex} (shape: {currentShapeType})");
+
+        // For each cell in the layout
         for (int x = 0; x < width; x++)
         {
-            for (int z = 0; z < height; z++)
+            for (int y = 0; y < height; y++)
             {
-                if (objectLayout[x, z] == 1)
+                if (objectLayout[x, y] == 1)
                 {
-                    // Calculate position relative to the pivot
-                    Vector2Int relativePos = new Vector2Int(x, z) - pivotCell;
-                    
-                    // Apply rotation
-                    relativePos = RotatePosition(relativePos, rotationIndex);
-                    
-                    _relativeCellPositions.Add(relativePos);
+                    // Get the local position relative to pivot
+                    Vector2Int localPos = new Vector2Int(x - pivotCell.x, y - pivotCell.y);
+                
+                    // Apply rotation using our fixed rotation function
+                    Vector2Int rotatedPos = RotatePosition(localPos, rotationIndex);
+                
+                    _relativeCellPositions.Add(rotatedPos);
+                
+                    Debug.Log($"Cell {x},{y} → local {localPos.x},{localPos.y} → " +
+                              $"rotated {rotationIndex*90}° = {rotatedPos.x},{rotatedPos.y}");
                 }
             }
         }
+
+        Debug.Log($"Calculated {_relativeCellPositions.Count} cell positions");
     }
     
-    /// <summary>
-    /// Rotates a position vector by a given number of 90-degree increments
-    /// </summary>
-    private Vector2Int RotatePosition(Vector2Int pos, int rotations)
+    private Vector2 ApplyRotation(Vector2 position, int rotIndex)
     {
-        Vector2Int rotated = pos;
-        
-        // Apply rotation (90 degree increments)
-        for (int i = 0; i < rotations; i++)
+        switch (rotIndex)
         {
-            // 90 degree rotation: (x, y) -> (-y, x)
-            rotated = new Vector2Int(-rotated.y, rotated.x);
+            case 0: // 0 degrees
+                return position;
+            case 1: // 90 degrees
+                return new Vector2(-position.y, position.x);
+            case 2: // 180 degrees
+                return new Vector2(-position.x, -position.y);
+            case 3: // 270 degrees
+                return new Vector2(position.y, -position.x);
+            default:
+                Debug.LogError($"Invalid rotation index: {rotIndex}");
+                return position;
         }
-        
-        return rotated;
     }
     
     /// <summary>
@@ -188,11 +227,55 @@ public class GridObject : MonoBehaviour
     /// </summary>
     public void RotateClockwise()
     {
+        // Increment rotation index
         rotationIndex = (rotationIndex + 1) % 4;
+    
+        // Apply visual rotation
+        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, rotationIndex * 90, 0);
+    
+        // Recalculate the cell positions with the new rotation
         CalculateRelativeCellPositions();
-        
-        // Visual feedback - rotate the actual transform
-        transform.Rotate(0, 90, 0);
+    
+        Debug.Log($"Rotated to {rotationIndex*90}° (index {rotationIndex})");
+    
+        // Add extra visual debug for rotation alignment
+#if UNITY_EDITOR
+        // Draw direction arrows in the scene view to show axes
+        Vector3 position = transform.position;
+        Debug.DrawLine(position, position + transform.right, Color.red, 2.0f);   // X axis
+        Debug.DrawLine(position, position + transform.forward, Color.blue, 2.0f); // Z axis
+        Debug.DrawLine(position, position + transform.up, Color.green, 2.0f);     // Y axis
+#endif
+    }
+    
+    public Vector2Int[] GetAbsoluteOccupiedPositions(Vector2Int basePosition)
+    {
+        // Calculate rotated positions
+        List<Vector2Int> positions = GetOccupiedCells(basePosition);
+        return positions.ToArray();
+    }
+    
+    public Vector2Int RotatePosition(Vector2Int position, int rotationIdx)
+    {
+        // Flip the rotation direction (counterclockwise instead of clockwise)
+        switch (rotationIdx)
+        {
+            case 0: // 0 degrees
+                return position;
+            
+            case 1:
+                return new Vector2Int(position.y, -position.x);
+            
+            case 2: // 180 degrees
+                return new Vector2Int(-position.x, -position.y);
+            
+            case 3: 
+                return new Vector2Int(-position.y, position.x);
+            
+            default:
+                Debug.LogError($"Invalid rotation index: {rotationIdx}");
+                return position;
+        }
     }
     
     /// <summary>
@@ -241,6 +324,8 @@ public class GridObject : MonoBehaviour
         }
     }
     
+    
+    
     /// <summary>
     /// Set the shape size and optionally apply it immediately
     /// </summary>
@@ -262,20 +347,55 @@ public class GridObject : MonoBehaviour
     /// </summary>
     public Vector3 GetCenterOffset(float cellSize)
     {
-        if (_relativeCellPositions.Count == 0)
+        // For a rotated object, we need to account for both the visual and logical centers
+        Vector3 offset = Vector3.zero;
+    
+        // Find the center of all occupied cells
+        if (_relativeCellPositions.Count > 0)
         {
-            return Vector3.zero;
-        }
+            int minX = int.MaxValue, maxX = int.MinValue;
+            int minY = int.MaxValue, maxY = int.MinValue;
         
-        // Calculate average position
-        Vector2 sum = Vector2.zero;
-        foreach (var pos in _relativeCellPositions)
+            foreach (var pos in _relativeCellPositions)
+            {
+                minX = Mathf.Min(minX, pos.x);
+                maxX = Mathf.Max(maxX, pos.x);
+                minY = Mathf.Min(minY, pos.y);
+                maxY = Mathf.Max(maxY, pos.y);
+            }
+        
+            // Get center of the bounding box
+            float centerX = (minX + maxX) / 2f;
+            float centerY = (minY + maxY) / 2f;
+        
+            offset = new Vector3(centerX * cellSize, 0, centerY * cellSize);
+        }
+    
+        // For rectangular shapes, apply additional visual offset based on rotation
+        if (visualOffset != Vector3.zero)
         {
-            sum += new Vector2(pos.x, pos.y);
+            Vector3 rotatedVisualOffset = ApplyRotationToVector3(visualOffset, rotationIndex);
+            offset += rotatedVisualOffset * cellSize;
         }
-        
-        Vector2 average = sum / _relativeCellPositions.Count;
-        return new Vector3(average.x * cellSize, 0, average.y * cellSize);
+
+        return offset;
+    }
+    private Vector3 ApplyRotationToVector3(Vector3 position, int rotIndex)
+    {
+        switch (rotIndex)
+        {
+            case 0: // 0 degrees
+                return position;
+            case 1: // 90 degrees
+                return new Vector3(-position.z, position.y, position.x);
+            case 2: // 180 degrees
+                return new Vector3(-position.x, position.y, -position.z);
+            case 3: // 270 degrees
+                return new Vector3(position.z, position.y, -position.x);
+            default:
+                Debug.LogError($"Invalid rotation index: {rotIndex}");
+                return position;
+        }
     }
     
     /// <summary>
@@ -284,16 +404,16 @@ public class GridObject : MonoBehaviour
     public List<Vector2Int> GetOccupiedCells(Vector2Int baseGridPosition)
     {
         List<Vector2Int> result = new List<Vector2Int>();
-        
+    
         foreach (var relativePos in _relativeCellPositions)
         {
             Vector2Int worldGridPos = baseGridPosition + relativePos;
             result.Add(worldGridPos);
         }
-        
+    
         return result;
     }
-    
+
     /// <summary>
     /// Gets the edge cells of this object at the specified position
     /// </summary>
@@ -773,7 +893,7 @@ public class GridObject : MonoBehaviour
             rotationIndex = data.rotationIndex;
             
             // Apply rotation visually
-            transform.rotation = Quaternion.Euler(0, rotationIndex * 90, 0);
+            transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, rotationIndex * 90, 0);
             
             Debug.Log($"Shape '{shapeName}' loaded successfully");
             return true;

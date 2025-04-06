@@ -67,6 +67,30 @@ public class GridDragAndDropManager : MonoBehaviour
     [Header("Events")]
     public UnityEvent OnBuildingPlaced;
     
+    [Header("Rotation Offset Correction")]
+    [Tooltip("Enable manual offset correction for specific rotations")]
+    public bool enableRotationOffsetCorrection = true;
+
+    [Tooltip("X offset for rotation 0 (0 degrees)")]
+    public float rotation0OffsetX = 0f;
+    [Tooltip("Z offset for rotation 0 (0 degrees)")]
+    public float rotation0OffsetZ = 0f;
+
+    [Tooltip("X offset for rotation 1 (90 degrees)")]
+    public float rotation1OffsetX = -1f;
+    [Tooltip("Z offset for rotation 1 (90 degrees)")]
+    public float rotation1OffsetZ = 0f;
+
+    [Tooltip("X offset for rotation 2 (180 degrees)")]
+    public float rotation2OffsetX = 0f;
+    [Tooltip("Z offset for rotation 2 (180 degrees)")]
+    public float rotation2OffsetZ = 0f;
+
+    [Tooltip("X offset for rotation 3 (270 degrees)")]
+    public float rotation3OffsetX = 0f;
+    [Tooltip("Z offset for rotation 3 (270 degrees)")]
+    public float rotation3OffsetZ = 0f;
+    
     private GameObject _selectedObject;
     private GridObject _selectedGridObject;
     private GameObject _previewObject;
@@ -366,7 +390,7 @@ public class GridDragAndDropManager : MonoBehaviour
         // Show placement UI
         ShowPlacementUI("Moving object: drag to place" + (enableRotation ? $", press {rotateKey} to rotate" : ""));
     }
-    
+
     /// <summary>
     /// Updates the position and visual feedback during dragging
     /// </summary>
@@ -374,36 +398,41 @@ public class GridDragAndDropManager : MonoBehaviour
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         Plane groundPlane = new Plane(Vector3.up, new Vector3(0, gridManager.gridOrigin.y + 0.1f, 0));
-        
+
         if (groundPlane.Raycast(ray, out float distance))
         {
             Vector3 worldPoint = ray.GetPoint(distance);
-            Vector2Int gridPosition = gridManager.GetGridPosition(worldPoint);
-            
+
+            // Use the precise grid position calculation
+            Vector2Int gridPosition = GetPreciseGridPosition(worldPoint);
+
+            // Debug the exact mouse position
+            Debug.Log($"Mouse world point: {worldPoint}, Grid position: {gridPosition}");
+
             // Ensure position is within grid bounds
             gridPosition = ClampPositionToGrid(gridPosition);
-            
+
             // Get the cells this object would occupy at the current position
             List<Vector2Int> occupiedCells = _previewGridObject.GetOccupiedCells(gridPosition);
-            
+
             // Check if the placement is valid
             _isValidPlacement = gridManager.IsValidPlacement(occupiedCells);
-            
-            // Update the preview object's position and material
+
+            // Update the preview object's material
             _previewGridObject.SetAllMaterials(_isValidPlacement ? validPositionMaterial : invalidPositionMaterial);
-            
-            // Update preview position
-            UpdatePreviewPosition(gridPosition);
-            
+
+            // Update preview position - use precise positioning
+            DirectPositioning(_previewObject, _previewGridObject, gridPosition);
+
             // Visualize the affected cells
             gridManager.ResetAllCellVisuals();
             gridManager.UpdateCellsVisual(occupiedCells, _isValidPlacement);
-            
+
             // Update status text
             UpdatePlacementStatusText(_isValidPlacement, occupiedCells);
         }
     }
-    
+
     private Vector2Int ClampPositionToGrid(Vector2Int position)
     {
         if (!gridManager.IsWithinGridBounds(position))
@@ -412,18 +441,104 @@ public class GridDragAndDropManager : MonoBehaviour
         }
         return position;
     }
-    
-    private void UpdatePreviewPosition(Vector2Int gridPosition)
+
+    private void DirectPositioning(GameObject obj, GridObject gridObj, Vector2Int gridPosition)
     {
-        Vector3 centerPosition = gridManager.GetWorldPosition(gridPosition);
-        Vector3 offset = _previewGridObject.GetCenterOffset(gridManager.cellSize);
-        _previewObject.transform.position = centerPosition + offset + new Vector3(0, objectHeightOffset, 0);
+        // First, apply the rotation-specific offset to the grid position if enabled
+        Vector2Int offsetGridPosition = gridPosition;
+
+        if (enableRotationOffsetCorrection)
+        {
+            // Get the appropriate offsets based on rotation
+            float offsetX = 0f;
+            float offsetZ = 0f;
+
+            switch (gridObj.rotationIndex)
+            {
+                case 0:
+                    offsetX = rotation0OffsetX;
+                    offsetZ = rotation0OffsetZ;
+                    break;
+                case 1:
+                    offsetX = rotation1OffsetX;
+                    offsetZ = rotation1OffsetZ;
+                    break;
+                case 2:
+                    offsetX = rotation2OffsetX;
+                    offsetZ = rotation2OffsetZ;
+                    break;
+                case 3:
+                    offsetX = rotation3OffsetX;
+                    offsetZ = rotation3OffsetZ;
+                    break;
+            }
+
+            // Apply the offset (only if non-zero)
+            if (offsetX != 0 || offsetZ != 0)
+            {
+                offsetGridPosition = new Vector2Int(
+                    gridPosition.x + Mathf.RoundToInt(offsetX),
+                    gridPosition.y + Mathf.RoundToInt(offsetZ)
+                );
+
+                Debug.Log($"Applied rotation {gridObj.rotationIndex} offset: X={offsetX}, Z={offsetZ}");
+                Debug.Log($"Grid position adjusted from {gridPosition} to {offsetGridPosition}");
+            }
+        }
+
+        // Get all the occupied grid positions based on the adjusted grid position
+        List<Vector2Int> occupiedPositions = gridObj.GetOccupiedCells(offsetGridPosition);
+
+        if (occupiedPositions.Count == 0) return;
+
+        // Calculate the center position
+        Vector3 worldCenter;
+
+        // Find center of occupied cells
+        Vector3 sum = Vector3.zero;
+        foreach (var pos in occupiedPositions)
+        {
+            sum += gridManager.GetWorldPosition(pos);
+        }
+
+        worldCenter = sum / occupiedPositions.Count;
+
+        // Use the gridManager's height offset instead of our local one
+        float heightOffset = gridManager.objectHeightOffset;
+
+        // Position the object
+        obj.transform.position = new Vector3(
+            worldCenter.x,
+            worldCenter.y + heightOffset,
+            worldCenter.z
+        );
+        Debug.Log($"Final position: {obj.transform.position} for {obj.name} with rotation {gridObj.rotationIndex}");
+    }
+
+    private Vector2Int GetPreciseGridPosition(Vector3 worldPoint)
+    {
+        // Get the raw grid position first
+        Vector2Int rawGridPos = gridManager.GetGridPosition(worldPoint);
+    
+        // Debug the conversion process
+        Debug.Log($"Raw world point: {worldPoint}, converted to grid: {rawGridPos}");
+    
+        // Verify the conversion by getting the world position of the grid cell
+        Vector3 gridWorldPos = gridManager.GetWorldPosition(rawGridPos);
+        Debug.Log($"Grid position {rawGridPos} converts to world: {gridWorldPos}");
+    
+        // Calculate distances to adjacent cells to find the closest one
+        float cellSize = gridManager.cellSize;
+    
+        return rawGridPos;
     }
     
+    
+
     private void UpdatePlacementStatusText(bool isValid, List<Vector2Int> occupiedCells)
     {
         if (placementStatusText == null) return;
-        
+
         if (isValid)
         {
             placementStatusText.text = "Valid placement - release to place";
@@ -431,16 +546,24 @@ public class GridDragAndDropManager : MonoBehaviour
         else
         {
             // Determine reason for invalid placement
-            if (gridManager.requireEdgeConnectivity && !gridManager.HasEdgeConnectivity(occupiedCells))
+            if (gridManager.requireEdgeConnectivity && !gridManager.FirstObjectPlaced && gridManager.exemptFirstObject)
             {
-                placementStatusText.text = "Invalid placement - must connect to another object";
+                // First object placement
+                placementStatusText.text = "First building - can be placed anywhere on grid";
+            }
+            else if (gridManager.requireEdgeConnectivity && !gridManager.HasEdgeConnectivity(occupiedCells))
+            {
+                // Need connectivity but don't have it - specifically clarify it needs to connect to player buildings
+                placementStatusText.text = "Invalid placement - must connect to another player-placed building";
             }
             else
             {
+                // Other placement issues
                 placementStatusText.text = "Invalid placement - cells already occupied or out of bounds";
             }
         }
     }
+    
     
     /// <summary>
     /// Rotates the preview object during placement
@@ -448,10 +571,13 @@ public class GridDragAndDropManager : MonoBehaviour
     private void RotatePreview()
     {
         if (_previewGridObject == null) return;
-        
+    
         // Rotate the preview
         _previewGridObject.RotateClockwise();
-        
+    
+        // Important: RotateClockwise already calls CalculateRelativeCellPositions,
+        // so the GridObject component has already updated its internal layout
+    
         // Update placement validation and visuals
         if (_isDragging)
         {
@@ -462,6 +588,7 @@ public class GridDragAndDropManager : MonoBehaviour
             UpdatePlacementPreview();
         }
     }
+
     
     /// <summary>
     /// Starts placement mode for a new object
@@ -608,7 +735,7 @@ public class GridDragAndDropManager : MonoBehaviour
             placementStatusText.text = "";
         }
     }
-    
+
     /// <summary>
     /// Finalizes placement of an existing object being moved
     /// </summary>
@@ -617,7 +744,7 @@ public class GridDragAndDropManager : MonoBehaviour
         // Get the grid position
         Vector2Int gridPosition = gridManager.GetGridPosition(_previewObject.transform.position);
 
-        // Get the cells this object would occupy with possibly rotated layout
+        // Get the cells this object would occupy with the current rotation
         List<Vector2Int> occupiedCells = _previewGridObject.GetOccupiedCells(gridPosition);
 
         bool wasPlaced = false;
@@ -630,34 +757,36 @@ public class GridDragAndDropManager : MonoBehaviour
             {
                 _selectedGridObject.rotationIndex = _previewGridObject.rotationIndex;
                 _selectedGridObject.CalculateRelativeCellPositions();
-            
-                // Also rotate the visual transform to match
-                _selectedObject.transform.rotation = _previewObject.transform.rotation;
+
+                // Apply visual rotation
+                _selectedObject.transform.rotation = Quaternion.Euler(
+                    _selectedObject.transform.rotation.eulerAngles.x,
+                    _selectedGridObject.rotationIndex * 90,
+                    0
+                );
             }
-        
+
             // Place at new position
             gridManager.PlaceObject(_selectedObject, occupiedCells);
-            
-            OnBuildingPlaced?.Invoke();
 
-            // Update the object's position in the world
-            Vector3 centerPosition = gridManager.GetWorldPosition(gridPosition);
-            Vector3 offset = _selectedGridObject.GetCenterOffset(gridManager.cellSize);
-            _selectedObject.transform.position = centerPosition + offset + new Vector3(0, objectHeightOffset, 0);
+            // Position the object using our direct positioning method
+            DirectPositioning(_selectedObject, _selectedGridObject, gridPosition);
 
             // Update the object's record of occupied cells
             _selectedGridObject.UpdateCurrentGridPositions(gridPosition);
 
-            // CHANGE: Make the object immovable after placement
+            // Make the object immovable after placement
             _selectedGridObject.MarkAsImmovable();
 
             wasPlaced = true;
-            Debug.Log($"Object placed at {gridPosition}, occupying {occupiedCells.Count} cells with rotation {_selectedGridObject.rotationIndex}");
+            Debug.Log(
+                $"Object placed at {gridPosition}, occupying {occupiedCells.Count} cells with rotation {_selectedGridObject.rotationIndex * 90}°");
 
             // Play success sound and effect
             PlaySound(placementSuccessSound);
-            SpawnPlacementEffect(centerPosition);
-            
+            SpawnPlacementEffect(_selectedObject.transform.position);
+
+            // Fire the building placed event
             OnBuildingPlaced?.Invoke();
         }
         else
@@ -673,10 +802,13 @@ public class GridDragAndDropManager : MonoBehaviour
             _selectedGridObject.rotationIndex = _originalRotation;
             _selectedGridObject.CalculateRelativeCellPositions();
             _selectedGridObject.UpdateCurrentGridPositions(_originalGridPosition);
-            
+
             // Reset rotation transform
-            _selectedObject.transform.rotation = Quaternion.Euler(-90, 0, 0);
-            
+            _selectedObject.transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, _originalRotation * 90, 0);
+
+            // Position back at original location
+            DirectPositioning(_selectedObject, _selectedGridObject, _originalGridPosition);
+
             Debug.Log($"Object returned to original position at {_originalGridPosition}");
         }
 
@@ -707,6 +839,13 @@ public class GridDragAndDropManager : MonoBehaviour
 
         if (_isValidPlacement)
         {
+            // Make sure rotation is set correctly
+            _placementObject.transform.rotation = Quaternion.Euler(
+                _placementObject.transform.rotation.eulerAngles.x, 
+                _previewGridObject.rotationIndex * 90, 
+                0
+            );
+            
             // Enable colliders on the placed object
             Collider[] colliders = _placementObject.GetComponentsInChildren<Collider>();
             foreach (var collider in colliders)
@@ -716,7 +855,10 @@ public class GridDragAndDropManager : MonoBehaviour
 
             // Place the object on the grid
             gridManager.PlaceObject(_placementObject, occupiedCells);
-            
+
+            // Position using direct positioning
+            DirectPositioning(_placementObject, _previewGridObject, gridPosition);
+
             OnBuildingPlaced?.Invoke();
 
             // Update the object's record of occupied cells
@@ -729,14 +871,12 @@ public class GridDragAndDropManager : MonoBehaviour
             _previewGridObject.RestoreOriginalMaterials();
 
             Debug.Log(
-                $"New object placed at {gridPosition}, occupying {occupiedCells.Count} cells with rotation {_previewGridObject.rotationIndex}");
+                $"New object placed at {gridPosition}, occupying {occupiedCells.Count} cells with rotation {_previewGridObject.rotationIndex * 90}°");
 
             // Play success sound and effect
             PlaySound(placementSuccessSound);
-            Vector3 centerPosition = gridManager.GetWorldPosition(gridPosition);
-            SpawnPlacementEffect(centerPosition);
+            SpawnPlacementEffect(_placementObject.transform.position);
 
-            
             // Reset placement mode but keep the object
             _previewObject = null;
             _previewGridObject = null;
@@ -788,7 +928,7 @@ public class GridDragAndDropManager : MonoBehaviour
         {
             _selectedGridObject.rotationIndex = _originalRotation;
             _selectedGridObject.CalculateRelativeCellPositions();
-            _selectedObject.transform.rotation = Quaternion.Euler(-90, _originalRotation * 90, 0);
+            _selectedObject.transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, _originalRotation * 90, 0);
         }
         
         Debug.Log($"Placement canceled, object returned to original position at {_originalGridPosition}");

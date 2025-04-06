@@ -125,12 +125,13 @@ MonoBehaviour:
   pivotCell: {x: 1, y: 0}
   currentShapeType: 5
   shapeSize: 3
-  autoUpdateShape: 1
+  autoUpdateShape: 0
   isMovable: 1
   isDestructible: 1
   rotationIndex: 0
-  validPlacementMaterial: {fileID: 0}
-  invalidPlacementMaterial: {fileID: 0}
-  selectedMaterial: {fileID: 0}
+  validPlacementMaterial: {fileID: 2100000, guid: 71c259ee618dca743a731cbbfbbb2b8a, type: 2}
+  invalidPlacementMaterial: {fileID: 2100000, guid: 0561241b890b30a42a5c2a03290a0c84, type: 2}
+  selectedMaterial: {fileID: 2100000, guid: 35f89521db5520847867eddef5f8ef58, type: 2}
   saveFolder: GridShapes
   loadShapeOnStart: Airport
+  visualOffset: {x: 0, y: 1, z: 0}

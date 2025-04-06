@@ -1512,6 +1512,15 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  enableRotationOffsetCorrection: 1
+  rotation0OffsetX: 0
+  rotation0OffsetZ: 0
+  rotation1OffsetX: 0
+  rotation1OffsetZ: 0
+  rotation2OffsetX: 0
+  rotation2OffsetZ: 0
+  rotation3OffsetX: 0
+  rotation3OffsetZ: 0
 --- !u!114 &1053410309
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1533,10 +1542,13 @@ MonoBehaviour:
   validPlacementMaterial: {fileID: 0}
   invalidPlacementMaterial: {fileID: 0}
   occupiedCellMaterial: {fileID: 0}
+  objectHeightOffset: 0.1
+  applyHeightOffsetToPreplaced: 1
   requireEdgeConnectivity: 1
+  exemptFirstObject: 1
   showOnlyUsedTiles: 1
   saveFolder: GridLayouts
-  defaultGridLayout: Grid1
+  defaultGridLayout: GridLayout
   cellContainer: {fileID: 2094975139}
 --- !u!114 &1053410310
 MonoBehaviour:
@@ -1561,14 +1573,14 @@ MonoBehaviour:
     customShapeName: 
   - prefab: {fileID: 4461154944462490053, guid: 45785ef0db3cf724baff40a3e9ac725d, type: 3}
     gridPosition: {x: 3, y: 4}
-    rotationIndex: 1
+    rotationIndex: 0
     isMovable: 0
     isDestructible: 1
     useCustomShape: 0
     customShapeName: 
   - prefab: {fileID: 5009564465784638043, guid: 16c8cbc5a0f270b44bf20ee500b67ec5, type: 3}
     gridPosition: {x: 5, y: 4}
-    rotationIndex: 1
+    rotationIndex: 0
     isMovable: 0
     isDestructible: 1
     useCustomShape: 0
@@ -1904,19 +1916,7 @@ MonoBehaviour:
       m_Calls: []
   OnNextBuildingChanged:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1350008880}
-        m_TargetAssemblyTypeName: GameStateManager, Assembly-CSharp
-        m_MethodName: CheckGameState
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnCanAffordChanged:
     m_PersistentCalls:
       m_Calls:
@@ -2405,13 +2405,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1687605550}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0.2, y: 0.1, z: -10.425219}
   m_LocalScale: {x: 2, y: 0.2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!1 &1689536179
 GameObject:
   m_ObjectHideFlags: 0
@@ -2766,19 +2766,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1942279546}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1350008880}
-        m_TargetAssemblyTypeName: GameStateManager, Assembly-CSharp
-        m_MethodName: LogDebugInfo
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1942279546
 MonoBehaviour:
   m_ObjectHideFlags: 0

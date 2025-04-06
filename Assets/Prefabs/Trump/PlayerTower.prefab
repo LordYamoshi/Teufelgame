@@ -28,13 +28,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9053618419550519268}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 100.00005, z: 100.00003}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!33 &5904601276529331350
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -122,15 +122,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74db20a996e40df4b8cbdd11346e5f52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pivotCell: {x: 0, y: 0}
-  currentShapeType: 0
+  pivotCell: {x: 2, y: 2}
+  currentShapeType: 5
   shapeSize: 3
-  autoUpdateShape: 1
+  autoUpdateShape: 0
   isMovable: 1
   isDestructible: 1
   rotationIndex: 0
-  validPlacementMaterial: {fileID: 0}
-  invalidPlacementMaterial: {fileID: 0}
-  selectedMaterial: {fileID: 0}
+  validPlacementMaterial: {fileID: 2100000, guid: 71c259ee618dca743a731cbbfbbb2b8a, type: 2}
+  invalidPlacementMaterial: {fileID: 2100000, guid: 0561241b890b30a42a5c2a03290a0c84, type: 2}
+  selectedMaterial: {fileID: 2100000, guid: 35f89521db5520847867eddef5f8ef58, type: 2}
   saveFolder: GridShapes
   loadShapeOnStart: Tower
+  visualOffset: {x: 0, y: 0, z: 0}

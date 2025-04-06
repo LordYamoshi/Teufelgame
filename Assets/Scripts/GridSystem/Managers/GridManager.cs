@@ -38,9 +38,31 @@ public class GridManager : MonoBehaviour
     [Tooltip("Material for occupied cells")]
     public Material occupiedCellMaterial;
     
+    [Header("Object Placement")]
+    [Tooltip("Global Y-position offset for all placed objects")]
+    public float objectHeightOffset = 1f;
+
+    [Tooltip("Whether to apply height offset to preplaced objects")]
+    public bool applyHeightOffsetToPreplaced = true;
+    
     [Header("Gameplay Rules")]
     [Tooltip("Require connectivity to existing buildings")]
     public bool requireEdgeConnectivity = true;
+    
+    [Tooltip("Allow the first object to be placed anywhere")]
+    public bool exemptFirstObject = true;
+
+    private Dictionary<GameObject, List<Vector2Int>> _preplacedObjects = new Dictionary<GameObject, List<Vector2Int>>();
+    private bool _firstPlayerObjectPlaced = false;
+
+    public bool HasPlacedObjects => _placedObjects.Count - _preplacedObjects.Count > 0;
+
+    public bool FirstObjectPlaced 
+    { 
+        get => _firstPlayerObjectPlaced;
+        set => _firstPlayerObjectPlaced = value; 
+    }
+
     
     [Tooltip("Show only tiles that will be used by the object")]
     public bool showOnlyUsedTiles = true;
@@ -52,13 +74,11 @@ public class GridManager : MonoBehaviour
     [Tooltip("Default grid layout to load on start")]
     public string defaultGridLayout = "";
     
-    // Grid data storage - key is grid position, value is the cell
+
     private Dictionary<Vector2Int, GridCell> _cells = new Dictionary<Vector2Int, GridCell>();
     
-    // Parent transform for all cell visuals
     public Transform cellContainer;
     
-    // Track all placed objects and their occupied cells
     private Dictionary<GameObject, List<Vector2Int>> _placedObjects = new Dictionary<GameObject, List<Vector2Int>>();
     #endregion
     
@@ -75,6 +95,7 @@ public class GridManager : MonoBehaviour
         
         // Create save directory if needed
         EnsureSaveDirectoryExists();
+        
     }
 
     private void Start()
@@ -208,8 +229,8 @@ public class GridManager : MonoBehaviour
     /// </summary>
     public void ClearGrid()
     {
-        Debug.Log($"Clearing grid with {_cells.Count} cells");
-        
+        Debug.Log($"Clearing grid with {_cells.Count} cells, {_placedObjects.Count} total objects ({_preplacedObjects.Count} preplaced)");
+    
         foreach (var cell in _cells.Values)
         {
             if (cell.CellVisual != null)
@@ -217,11 +238,12 @@ public class GridManager : MonoBehaviour
                 Destroy(cell.CellVisual);
             }
         }
-        
+    
         _cells.Clear();
         _placedObjects.Clear();
+        _preplacedObjects.Clear();
+        _firstPlayerObjectPlaced = false;
     }
-    
     /// <summary>
     /// Returns the total number of cells in the grid
     /// </summary>
@@ -254,18 +276,23 @@ public class GridManager : MonoBehaviour
     /// <summary>
     /// Converts a grid position to a world position
     /// </summary>
-    public Vector3 GetWorldPosition(Vector2Int gridPos)
+    public Vector3 GetWorldPosition(Vector2Int gridPos, bool applyHeightOffset = false)
     {
         float offsetX = -maxWidth * cellSize / 2;
         float offsetZ = -maxDepth * cellSize / 2;
-        
+    
         return new Vector3(
             offsetX + gridPos.x * cellSize + cellSize / 2,
-            gridOrigin.y,
+            gridOrigin.y + (applyHeightOffset ? objectHeightOffset : 0),
             offsetZ + gridPos.y * cellSize + cellSize / 2
         ) + new Vector3(gridOrigin.x, 0, gridOrigin.z);
     }
- 
+    
+    public Vector3 GetWorldPositionWithOffset(Vector2Int gridPos)
+    {
+        return GetWorldPosition(gridPos, true);
+    }
+    
     /// <summary>
     /// Converts a world position to a grid position
     /// </summary>
@@ -333,14 +360,14 @@ public class GridManager : MonoBehaviour
     /// <summary>
     /// Places an object on the grid at the specified positions
     /// </summary>
-    public bool PlaceObject(GameObject obj, List<Vector2Int> occupiedCells)
+    public bool PlaceObject(GameObject obj, List<Vector2Int> occupiedCells, bool isPreplaced = false)
     {
         if (obj == null || occupiedCells == null || occupiedCells.Count == 0)
         {
             Debug.LogError("Invalid parameters for PlaceObject");
             return false;
         }
-        
+    
         // Double check that all cells are valid before placement
         foreach (var pos in occupiedCells)
         {
@@ -350,7 +377,7 @@ public class GridManager : MonoBehaviour
                 return false;
             }
         }
-    
+
         // All cells are valid, so place the object
         foreach (var pos in occupiedCells)
         {
@@ -359,12 +386,34 @@ public class GridManager : MonoBehaviour
                 cell.SetOccupyingObject(obj);
             }
         }
-        
+    
         // Track this object and its cells
         _placedObjects[obj] = new List<Vector2Int>(occupiedCells);
     
-        Debug.Log($"Object {obj.name} placed on {occupiedCells.Count} cells");
+        // If it's a preplaced object, also track it in the preplaced collection
+        if (isPreplaced)
+        {
+            _preplacedObjects[obj] = new List<Vector2Int>(occupiedCells);
+            Debug.Log($"Preplaced object {obj.name} added to grid on {occupiedCells.Count} cells");
+        }
+        else
+        {
+            // If it's not preplaced (player-placed) and it's the first player object
+            if (!_firstPlayerObjectPlaced && GetPlayerPlacedObjectCount() == 1)
+            {
+                _firstPlayerObjectPlaced = true;
+                Debug.Log("First player object placed - subsequent objects will require edge connectivity");
+            }
+        
+            Debug.Log($"Player object {obj.name} placed on {occupiedCells.Count} cells");
+        }
+    
         return true;
+    }
+    
+    public int GetPlayerPlacedObjectCount()
+    {
+        return _placedObjects.Count - _preplacedObjects.Count;
     }
 
     /// <summary>
@@ -373,7 +422,7 @@ public class GridManager : MonoBehaviour
     public void RemoveObject(GameObject obj, List<Vector2Int> occupiedCells)
     {
         if (obj == null) return;
-    
+
         // Check if the object is movable
         GridObject gridObj = obj.GetComponent<GridObject>();
         if (gridObj != null && !gridObj.isMovable)
@@ -381,12 +430,12 @@ public class GridManager : MonoBehaviour
             Debug.LogWarning($"Cannot move object {obj.name} as it is marked as immovable");
             return;
         }
-    
+
         int cellsCleared = 0;
 
         // First, reset all cell visuals to ensure proper state transition
         ResetAllCellVisuals();
-    
+
         // Now clear the cells one by one
         foreach (var pos in occupiedCells)
         {
@@ -400,16 +449,34 @@ public class GridManager : MonoBehaviour
                 }
             }
         }
+
+        // Check if it was a preplaced object before removing
+        bool wasPreplaced = _preplacedObjects.ContainsKey(obj);
     
         // Remove from tracked objects
         if (_placedObjects.ContainsKey(obj))
         {
             _placedObjects.Remove(obj);
         }
-
-        Debug.Log($"Removed object {obj.name} from {cellsCleared} cells");
-    }
     
+        // Remove from preplaced objects if applicable
+        if (_preplacedObjects.ContainsKey(obj))
+        {
+            _preplacedObjects.Remove(obj);
+        }
+    
+        // If we removed all player-placed objects, reset first object placed flag
+        if (GetPlayerPlacedObjectCount() == 0)
+        {
+            _firstPlayerObjectPlaced = false;
+            Debug.Log("All player objects removed - next object can be placed anywhere");
+        }
+
+        Debug.Log($"Removed {(wasPreplaced ? "preplaced" : "player")} object {obj.name} from {cellsCleared} cells");
+    }
+
+    
+
     /// <summary>
     /// Destroys an object on the grid
     /// </summary>
@@ -446,7 +513,7 @@ public class GridManager : MonoBehaviour
         {
             return false;
         }
-        
+
         // Basic cell validity check
         foreach (var pos in cellsToCheck)
         {
@@ -455,7 +522,7 @@ public class GridManager : MonoBehaviour
             {
                 return false;
             }
-            
+    
             // Then check if the cell is valid at that position
             if (!IsCellValid(pos))
             {
@@ -463,13 +530,16 @@ public class GridManager : MonoBehaviour
             }
         }
         
-        // If we don't require edge connectivity, or this is the first object, we're done
-        if (!requireEdgeConnectivity || _placedObjects.Count == 0)
+        if (!requireEdgeConnectivity)
         {
             return true;
         }
         
-        // Check edge connectivity - at least one edge must be adjacent to an existing object
+        if (exemptFirstObject && !_firstPlayerObjectPlaced)
+        {
+            return true;
+        }
+        
         return HasEdgeConnectivity(cellsToCheck);
     }
     
@@ -478,7 +548,6 @@ public class GridManager : MonoBehaviour
     /// </summary>
     public bool HasEdgeConnectivity(List<Vector2Int> cellsToCheck)
     {
-        // For each cell in the placement, check if any adjacent cell is occupied by another object
         foreach (var pos in cellsToCheck)
         {
             // Check all adjacent cells (up, down, left, right)
@@ -489,7 +558,7 @@ public class GridManager : MonoBehaviour
                 new Vector2Int(pos.x, pos.y + 1),
                 new Vector2Int(pos.x, pos.y - 1)
             };
-            
+        
             foreach (var adjacentPos in adjacentCells)
             {
                 // Skip if the adjacent cell is part of our placement
@@ -497,23 +566,28 @@ public class GridManager : MonoBehaviour
                 {
                     continue;
                 }
-                
+            
                 // Skip if the adjacent cell is out of bounds
                 if (!IsWithinGridBounds(adjacentPos))
                 {
                     continue;
                 }
-                
+            
                 // Check if the adjacent cell exists and is occupied
                 if (_cells.TryGetValue(adjacentPos, out GridCell cell) && cell.OccupyingObject != null)
                 {
-                    return true; // Found a connection!
+
+                    if (!_preplacedObjects.ContainsKey(cell.OccupyingObject))
+                    {
+                        return true; 
+                    }
                 }
             }
         }
-        
-        return false; // No connectivity found
+    
+        return false; 
     }
+
 
     /// <summary>
     /// Get all currently placed objects
@@ -603,7 +677,9 @@ public class GridManager : MonoBehaviour
             cell.UpdateVisual(false, true, false); // Explicitly reset dragging state
         }
     }
+    
 
+    
     /// <summary>
     /// Set custom colors for cell visualizations
     /// </summary>

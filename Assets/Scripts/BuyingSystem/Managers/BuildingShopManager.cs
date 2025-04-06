@@ -278,7 +278,7 @@ public class BuildingShopManager : MonoBehaviour
         // Trigger event
         OnBuildingPurchased?.Invoke(building);
     }
-    
+
     private void SpawnPurchasedBuilding(BuildingOption building)
     {
         // Double check we have a valid building reference
@@ -287,40 +287,70 @@ public class BuildingShopManager : MonoBehaviour
             Debug.LogError("Cannot spawn null building or prefab!");
             return;
         }
-        
-        // Log explicitly what we're spawning
-        Debug.Log($"Spawning purchased building: {building.displayName} with prefab {building.buildingPrefab.name}");
-        
+
         // Clear any existing placement object
         if (_currentPlacementObject != null)
         {
             Destroy(_currentPlacementObject);
             _currentPlacementObject = null;
         }
-        
-        // Instantiate the building prefab - use the exact reference passed in
+
+        // Instantiate the building prefab - preserve prefab's original X rotation
         GameObject buildingObject = Instantiate(building.buildingPrefab);
         _currentPlacementObject = buildingObject;
-        
-        // Log what was actually spawned
-        Debug.Log($"SPAWNED: {buildingObject.name}");
-        
-        // Position at the spawn point
+
+        // Position at the spawn point with preserved X rotation
         if (buildingSpawnPoint != null)
         {
-            buildingObject.transform.position = buildingSpawnPoint.position;
-            buildingObject.transform.rotation = buildingSpawnPoint.rotation;
+            // Apply Y offset
+            float yOffset = 0f;
+
+            // Get the grid manager to use its offset
+            GridManager gridManager = FindObjectOfType<GridManager>();
+            if (gridManager != null)
+            {
+                yOffset = gridManager.objectHeightOffset;
+            }
+
+            buildingObject.transform.position = new Vector3(
+                buildingSpawnPoint.position.x,
+                buildingSpawnPoint.position.y + yOffset,
+                buildingSpawnPoint.position.z
+            );
+
+            // Use the prefab's original X rotation
+            buildingObject.transform.rotation = Quaternion.Euler(
+                buildingObject.transform.rotation.eulerAngles.x,
+                0,
+                0
+            );
         }
         else
         {
             Debug.LogWarning("No building spawn point set - placing at origin");
-            buildingObject.transform.position = Vector3.zero;
+
+            // Apply Y offset even at origin
+            float yOffset = 0f;
+            GridManager gridManager = FindObjectOfType<GridManager>();
+            if (gridManager != null)
+            {
+                yOffset = gridManager.objectHeightOffset;
+            }
+
+            buildingObject.transform.position = new Vector3(0, yOffset, 0);
+
+            // Preserve X rotation even at origin
+            buildingObject.transform.rotation = Quaternion.Euler(
+                buildingObject.transform.rotation.eulerAngles.x,
+                0,
+                0
+            );
         }
-        
+
         // Make it ready for placement
         MakeBuildingPlaceable(buildingObject);
     }
-    
+
     private void MakeBuildingPlaceable(GameObject buildingObject)
     {
         // Check for GridObject component

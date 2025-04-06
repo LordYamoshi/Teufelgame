@@ -35,7 +35,7 @@ public class GridEditor : Editor
     private bool _showGridLines = true;
     
     // Save/Load
-    private bool _showSaveLoadSection = false;
+    private bool _showSaveLoadSection = true;
     private string _saveFileName = "GridLayout";
     
     // Applied grid tracking
@@ -53,10 +53,12 @@ public class GridEditor : Editor
     private SerializedProperty _requireEdgeConnectivityProperty;
     private SerializedProperty _showOnlyUsedTilesProperty;
     private SerializedProperty _defaultGridLayoutProperty;
+    private SerializedProperty _exemptFirstObjectProperty;
+    private SerializedProperty _objectHeightOffsetProperty;
+    private SerializedProperty _applyHeightOffsetToPreplacedProperty;
     
     private void OnEnable()
     {
-        // Get serialized properties
         _maxWidthProperty = serializedObject.FindProperty("maxWidth");
         _maxDepthProperty = serializedObject.FindProperty("maxDepth");
         _cellSizeProperty = serializedObject.FindProperty("cellSize");
@@ -64,9 +66,12 @@ public class GridEditor : Editor
         _cellVisualPrefabProperty = serializedObject.FindProperty("cellVisualPrefab");
         _cellContainerProperty = serializedObject.FindProperty("cellContainer");
         _requireEdgeConnectivityProperty = serializedObject.FindProperty("requireEdgeConnectivity");
+        _exemptFirstObjectProperty = serializedObject.FindProperty("exemptFirstObject"); // New property
         _showOnlyUsedTilesProperty = serializedObject.FindProperty("showOnlyUsedTiles");
         _defaultGridLayoutProperty = serializedObject.FindProperty("defaultGridLayout");
-
+        _objectHeightOffsetProperty = serializedObject.FindProperty("objectHeightOffset");
+        _applyHeightOffsetToPreplacedProperty = serializedObject.FindProperty("applyHeightOffsetToPreplaced");
+        
         // Initialize grid data with default values
         GridManager gridManager = (GridManager)target;
         _width = gridManager.maxWidth;
@@ -81,25 +86,73 @@ public class GridEditor : Editor
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Grid Manager Properties", EditorStyles.boldLabel);
-        
+
         EditorGUILayout.PropertyField(_maxWidthProperty);
         EditorGUILayout.PropertyField(_maxDepthProperty);
         EditorGUILayout.PropertyField(_cellSizeProperty);
         EditorGUILayout.PropertyField(_gridOriginProperty);
         EditorGUILayout.PropertyField(_cellVisualPrefabProperty);
         EditorGUILayout.PropertyField(_cellContainerProperty);
-        
+
         EditorGUILayout.Space(5);
         EditorGUILayout.LabelField("Gameplay Rules", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(_requireEdgeConnectivityProperty, new GUIContent("Require Edge Connectivity", "Objects must have at least one edge connected to an existing object"));
-        EditorGUILayout.PropertyField(_showOnlyUsedTilesProperty, new GUIContent("Show Only Used Tiles", "Only highlight tiles that will be used by the object (Clash of Clans style)"));
-        EditorGUILayout.PropertyField(_defaultGridLayoutProperty, new GUIContent("Default Grid Layout", "Grid layout to load on startup"));
+
+        EditorGUILayout.PropertyField(_requireEdgeConnectivityProperty, new GUIContent(
+            "Require Edge Connectivity", "Objects must have at least one edge connected to an existing object"));
+
+        // Only show first object exemption if edge connectivity is required
+        if (_requireEdgeConnectivityProperty.boolValue)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(_exemptFirstObjectProperty, new GUIContent(
+                "Exempt First Object", "First object can be placed anywhere, subsequent objects require connectivity"));
+            EditorGUI.indentLevel--;
+        }
+
+        EditorGUILayout.PropertyField(_showOnlyUsedTilesProperty, new GUIContent(
+            "Show Only Used Tiles", "Only highlight tiles that will be used by the object "));
+
+        EditorGUILayout.PropertyField(_defaultGridLayoutProperty, new GUIContent(
+            "Default Grid Layout", "Grid layout to load on startup"));
 
         serializedObject.ApplyModifiedProperties();
 
+        if (Application.isPlaying)
+        {
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField("Runtime State", EditorStyles.boldLabel);
+    
+            EditorGUI.BeginDisabledGroup(true); // Make these read-only
+            EditorGUILayout.Toggle("First Player Object Placed", gridManager.FirstObjectPlaced);
+            EditorGUILayout.Toggle("Has Player Objects", gridManager.HasPlacedObjects);
+            EditorGUILayout.IntField("Player Objects Count", gridManager.GetPlayerPlacedObjectCount());
+            EditorGUILayout.IntField("Preplaced Objects Count", gridManager.GetAllPlacedObjects().Count - gridManager.GetPlayerPlacedObjectCount());
+            EditorGUILayout.IntField("Total Objects on Grid", gridManager.GetAllPlacedObjects().Count);
+            EditorGUI.EndDisabledGroup();
+    
+            if (gridManager.FirstObjectPlaced)
+            {
+                if (GUILayout.Button("Reset First Object State"))
+                {
+                    gridManager.FirstObjectPlaced = false;
+                    Debug.Log("First player object state manually reset");
+                }
+            }
+    
+            EditorGUILayout.Space(5);
+        }
+
+        EditorGUILayout.Space(5);
+        EditorGUILayout.LabelField("Object Placement", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(_objectHeightOffsetProperty, new GUIContent(
+            "Object Height Offset", "Y-position offset applied to all placed objects"));
+    
+        EditorGUILayout.PropertyField(_applyHeightOffsetToPreplacedProperty, new GUIContent(
+            "Apply to Preplaced", "Apply height offset to preplaced objects as well"));
+        
         EditorGUILayout.Space(20);
         DrawGridEditorSection(gridManager);
-        
+
         EditorGUILayout.Space(10);
         DrawSaveLoadSection(gridManager);
     }

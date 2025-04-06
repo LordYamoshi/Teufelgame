@@ -28,13 +28,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4461154944462490053}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: -0.041711338, y: -4.08, z: -0.5562563}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!33 &6319507437224176026
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -125,12 +125,13 @@ MonoBehaviour:
   pivotCell: {x: 0, y: 0}
   currentShapeType: 5
   shapeSize: 3
-  autoUpdateShape: 1
+  autoUpdateShape: 0
   isMovable: 0
   isDestructible: 1
   rotationIndex: 0
-  validPlacementMaterial: {fileID: 0}
-  invalidPlacementMaterial: {fileID: 0}
-  selectedMaterial: {fileID: 0}
+  validPlacementMaterial: {fileID: 2100000, guid: 71c259ee618dca743a731cbbfbbb2b8a, type: 2}
+  invalidPlacementMaterial: {fileID: 2100000, guid: 0561241b890b30a42a5c2a03290a0c84, type: 2}
+  selectedMaterial: {fileID: 2100000, guid: 35f89521db5520847867eddef5f8ef58, type: 2}
   saveFolder: GridShapes
   loadShapeOnStart: Gaza
+  visualOffset: {x: 0, y: 2, z: 0}
