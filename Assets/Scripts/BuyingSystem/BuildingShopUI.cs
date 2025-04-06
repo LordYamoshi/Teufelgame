@@ -70,7 +70,7 @@ public class BuildingShopUI : MonoBehaviour
         }
     }
     
-    private void OnBuyButtonClicked()
+    public void OnBuyButtonClicked()
     {
         if (shopManager != null)
         {
