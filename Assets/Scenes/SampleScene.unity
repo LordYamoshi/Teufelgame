@@ -1973,22 +1973,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   availableBuildings:
-  - buildingPrefab: {fileID: 6128971476781655698, guid: ca4a3ec2423082d469999594f873c913, type: 3}
-    displayName: Air Port
-    cost: 256625
-    previewImage: {fileID: 21300000, guid: ef5c4e9c584f91a49803010fd0544e9b, type: 3}
-    description: This is the airport
   - buildingPrefab: {fileID: 2931104201684680380, guid: 26acd792df0cd324598ffced68208297, type: 3}
     displayName: Hotel
     cost: 2424
     previewImage: {fileID: 21300000, guid: a0275245f0ffed24ea6bb16f7686d97e, type: 3}
     description: This is the hotel
+  - buildingPrefab: {fileID: 6128971476781655698, guid: ca4a3ec2423082d469999594f873c913, type: 3}
+    displayName: Air Port
+    cost: 256625
+    previewImage: {fileID: 21300000, guid: ef5c4e9c584f91a49803010fd0544e9b, type: 3}
+    description: This is the airport
   - buildingPrefab: {fileID: 9053618419550519268, guid: c02e4cd8e9a5fb743a57ac32ab46286b, type: 3}
     displayName: Tower
     cost: 25252626
     previewImage: {fileID: 21300000, guid: f229f8b243dc97147a9bc439b0cf3798, type: 3}
     description: This is the tower
-  randomizeBuildings: 1
+  randomizeBuildings: 0
   loopBuildings: 0
   startingCurrency: 4252525
   currencyText: {fileID: 1368286312}
