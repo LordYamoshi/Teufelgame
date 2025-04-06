@@ -960,30 +960,44 @@ public class GridDragAndDropManager : MonoBehaviour
     private void TryDestroySelectedObject()
     {
         if (_currentlySelectedObject == null) return;
-        
+    
         GridObject gridObj = _currentlySelectedObject.GetComponent<GridObject>();
         if (gridObj == null) return;
+    
+        // First check if it's a pre-placed object
+        if (!gridManager.IsPreplacedObject(_currentlySelectedObject))
+        {
+            // Show feedback for player-placed objects
+            ShowStatusMessage("Cannot delete player-built structures");
         
+            // Play error sound
+            PlaySound(placementErrorSound);
+        
+            // Add visual shake effect to indicate it's not deletable
+            StartCoroutine(ShakeObject(_currentlySelectedObject));
+            return;
+        }
+    
         if (!gridObj.isDestructible)
         {
             // Show feedback for indestructible object
-            ShowStatusMessage("This object cannot be destroyed");
-            
+            ShowStatusMessage("This pre-placed object cannot be destroyed");
+        
             // Play error sound
             PlaySound(placementErrorSound);
             return;
         }
-        
+    
         // Destroy the object
         GameObject objToDestroy = _currentlySelectedObject;
         Vector3 position = objToDestroy.transform.position;
         bool destroyed = gridManager.DestroyObject(objToDestroy);
-        
+    
         if (destroyed)
         {
-            Debug.Log($"Object {objToDestroy.name} destroyed");
+            Debug.Log($"Pre-placed object {objToDestroy.name} destroyed");
             _currentlySelectedObject = null;
-            
+        
             // Play destruction effect/sound
             SpawnPlacementEffect(position);
         }

@@ -487,21 +487,36 @@ public class GridManager : MonoBehaviour
             Debug.LogWarning($"Object {obj.name} is not placed on the grid");
             return false;
         }
-        
+    
+        // Check if it's a pre-placed object - ONLY pre-placed objects can be deleted
+        if (!_preplacedObjects.ContainsKey(obj))
+        {
+            Debug.LogWarning($"Cannot destroy object {obj.name} as only pre-placed objects can be deleted");
+            return false;
+        }
+    
         GridObject gridObj = obj.GetComponent<GridObject>();
         if (gridObj != null && !gridObj.isDestructible)
         {
             Debug.LogWarning($"Cannot destroy object {obj.name} as it is marked as indestructible");
             return false;
         }
-        
+    
         // Remove from grid
         RemoveObject(obj, occupiedCells);
-        
+    
         // Destroy the GameObject
         Destroy(obj);
-        
+    
         return true;
+    }
+    
+    /// <summary>
+    /// Checks if the specified object is a pre-placed object
+    /// </summary>
+    public bool IsPreplacedObject(GameObject obj)
+    {
+        return _preplacedObjects.ContainsKey(obj);
     }
     
     /// <summary>
