@@ -121,9 +121,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canGenerateIncome: 1
-  incomeAmount: 10
-  incomeInterval: 15
-  incomeEffectPrefab: {fileID: 0}
+  incomeAmount: 150
+  incomeInterval: 2
+  incomeEffectPrefab: {fileID: 9188421176723112645, guid: 9e47874047632ae4391c93ee3878c875, type: 3}
   OnIncomeGenerated:
     m_PersistentCalls:
       m_Calls: []
