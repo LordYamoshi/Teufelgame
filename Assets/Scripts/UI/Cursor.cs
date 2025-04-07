@@ -44,9 +44,7 @@ public class CustomCursor : MonoBehaviour
             mousePosition,
             null,
             out localPosition);
-
-        Debug.Log(localPosition);
-
+        
         // Set the UI element's position to the mouse position
         uiElement.localPosition = localPosition; // + position_offset;
     }

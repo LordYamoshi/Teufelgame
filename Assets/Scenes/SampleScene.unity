@@ -119,6 +119,11 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!20 &143845236 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 2627867941386925941, guid: 1f82d52d8c7868e42acbca192da0f636, type: 3}
+  m_PrefabInstance: {fileID: 1123668003}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &144640108
 GameObject:
   m_ObjectHideFlags: 0
@@ -1437,7 +1442,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ceba3fb1cd8219b4abdbadb7f69b8260, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainCamera: {fileID: 0}
+  mainCamera: {fileID: 143845236}
   gridManager: {fileID: 1053410309}
   highlightMaterial: {fileID: 2100000, guid: 35f89521db5520847867eddef5f8ef58, type: 2}
   validPositionMaterial: {fileID: 2100000, guid: 71c259ee618dca743a731cbbfbbb2b8a, type: 2}
@@ -1898,16 +1903,25 @@ MonoBehaviour:
     cost: 2424
     previewImage: {fileID: 21300000, guid: a0275245f0ffed24ea6bb16f7686d97e, type: 3}
     description: This is the hotel
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
   - buildingPrefab: {fileID: 6128971476781655698, guid: ca4a3ec2423082d469999594f873c913, type: 3}
     displayName: Air Port
     cost: 256625
     previewImage: {fileID: 21300000, guid: ef5c4e9c584f91a49803010fd0544e9b, type: 3}
     description: This is the airport
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
   - buildingPrefab: {fileID: 9053618419550519268, guid: c02e4cd8e9a5fb743a57ac32ab46286b, type: 3}
     displayName: Tower
     cost: 25252626
     previewImage: {fileID: 21300000, guid: f229f8b243dc97147a9bc439b0cf3798, type: 3}
     description: This is the tower
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
   randomizeBuildings: 0
   loopBuildings: 0
   startingCurrency: 4252525
@@ -1951,6 +1965,9 @@ MonoBehaviour:
     cost: 0
     previewImage: {fileID: 0}
     description: 
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
   _buildingSequence: 
   _currentBuildingIndex: 0
   _currentPlacementObject: {fileID: 0}

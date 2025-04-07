@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8348893373376448285}
   - component: {fileID: 2802790890080572074}
   - component: {fileID: 7845676613147511905}
+  - component: {fileID: -8488693674945961275}
   m_Layer: 6
   m_Name: PlayersHotel
   m_TagString: Untagged
@@ -133,5 +134,24 @@ MonoBehaviour:
   invalidPlacementMaterial: {fileID: 2100000, guid: 0561241b890b30a42a5c2a03290a0c84, type: 2}
   selectedMaterial: {fileID: 2100000, guid: 35f89521db5520847867eddef5f8ef58, type: 2}
   saveFolder: GridShapes
-  loadShapeOnStart: Hotel
+  loadShapeOnStart: 'Hotel '
   visualOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &-8488693674945961275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931104201684680380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93f61e55c657df64daaa94c606062350, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canGenerateIncome: 1
+  incomeAmount: 10
+  incomeInterval: 3
+  incomeEffectPrefab: {fileID: 9188421176723112645, guid: 9e47874047632ae4391c93ee3878c875, type: 3}
+  OnIncomeGenerated:
+    m_PersistentCalls:
+      m_Calls: []
