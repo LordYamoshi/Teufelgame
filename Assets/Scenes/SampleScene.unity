@@ -368,8 +368,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Building Name
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 42e8e7263755d984faa606d913721796, type: 2}
+  m_sharedMaterial: {fileID: -1022822624818813765, guid: 42e8e7263755d984faa606d913721796, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1806,8 +1806,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 333
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 42e8e7263755d984faa606d913721796, type: 2}
+  m_sharedMaterial: {fileID: -1022822624818813765, guid: 42e8e7263755d984faa606d913721796, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2794,8 +2794,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 200$
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: f861fa5ee968e1741859e6fcdc0a3bf4, type: 2}
+  m_sharedMaterial: {fileID: -1777219359174593867, guid: f861fa5ee968e1741859e6fcdc0a3bf4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -3774,8 +3774,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Text Description, deze stripclub is ESSENTIEEL, trust me bro...
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 42e8e7263755d984faa606d913721796, type: 2}
+  m_sharedMaterial: {fileID: -1022822624818813765, guid: 42e8e7263755d984faa606d913721796, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
