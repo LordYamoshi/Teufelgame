@@ -1548,11 +1548,6 @@ MonoBehaviour:
   purchaseSound: {fileID: 0}
   insufficientFundsSound: {fileID: 0}
   shopManager: {fileID: 1350008878}
-  sufficientFundsColor: {r: 1, g: 1, b: 1, a: 1}
-  canAffordColor: {r: 0, g: 1, b: 0, a: 1}
-  insufficientFundsColor: {r: 1, g: 0, b: 0, a: 1}
-  flashDuration: 0.1
-  numberOfFlashes: 3
 --- !u!1 &953956897
 GameObject:
   m_ObjectHideFlags: 0
@@ -2019,22 +2014,57 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gridManager: {fileID: 1053410309}
   preplacedObjects:
-  - prefab: {fileID: 2302404349134331463, guid: 7686fbe0d89525644a111e8ad214b6c5, type: 3}
-    gridPosition: {x: 1, y: 1}
-    rotationIndex: 0
-    isMovable: 0
-    isDestructible: 1
-    useCustomShape: 0
-    customShapeName: 
   - prefab: {fileID: 4461154944462490053, guid: 45785ef0db3cf724baff40a3e9ac725d, type: 3}
-    gridPosition: {x: 0, y: 4}
+    gridPosition: {x: 2, y: 4}
     rotationIndex: 0
     isMovable: 0
     isDestructible: 1
     useCustomShape: 0
     customShapeName: 
   - prefab: {fileID: 5009564465784638043, guid: 16c8cbc5a0f270b44bf20ee500b67ec5, type: 3}
-    gridPosition: {x: 3, y: 2}
+    gridPosition: {x: 3, y: 0}
+    rotationIndex: 0
+    isMovable: 0
+    isDestructible: 1
+    useCustomShape: 0
+    customShapeName: 
+  - prefab: {fileID: 5009564465784638043, guid: 16c8cbc5a0f270b44bf20ee500b67ec5, type: 3}
+    gridPosition: {x: 5, y: 2}
+    rotationIndex: 3
+    isMovable: 0
+    isDestructible: 1
+    useCustomShape: 0
+    customShapeName: 
+  - prefab: {fileID: 2302404349134331463, guid: 7686fbe0d89525644a111e8ad214b6c5, type: 3}
+    gridPosition: {x: 0, y: 9}
+    rotationIndex: 3
+    isMovable: 0
+    isDestructible: 1
+    useCustomShape: 0
+    customShapeName: 
+  - prefab: {fileID: 2302404349134331463, guid: 7686fbe0d89525644a111e8ad214b6c5, type: 3}
+    gridPosition: {x: 1, y: 2}
+    rotationIndex: 0
+    isMovable: 0
+    isDestructible: 1
+    useCustomShape: 0
+    customShapeName: 
+  - prefab: {fileID: 4461154944462490053, guid: 45785ef0db3cf724baff40a3e9ac725d, type: 3}
+    gridPosition: {x: 2, y: 11}
+    rotationIndex: 0
+    isMovable: 0
+    isDestructible: 1
+    useCustomShape: 0
+    customShapeName: 
+  - prefab: {fileID: 5009564465784638043, guid: 16c8cbc5a0f270b44bf20ee500b67ec5, type: 3}
+    gridPosition: {x: 2, y: 7}
+    rotationIndex: 0
+    isMovable: 0
+    isDestructible: 1
+    useCustomShape: 0
+    customShapeName: 
+  - prefab: {fileID: 4461154944462490053, guid: 45785ef0db3cf724baff40a3e9ac725d, type: 3}
+    gridPosition: {x: 3, y: 9}
     rotationIndex: 0
     isMovable: 0
     isDestructible: 1
