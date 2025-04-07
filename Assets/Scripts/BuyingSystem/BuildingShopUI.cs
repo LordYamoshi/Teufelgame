@@ -18,7 +18,21 @@ public class BuildingShopUI : MonoBehaviour
     public AudioClip insufficientFundsSound;
     public BuildingShopManager shopManager;
     
+    [Header("Currency Text Settings")]
+    [Tooltip("Color when player has enough money")]
+    public Color sufficientFundsColor = Color.white;
+    [Tooltip("Color when player has enough money to buy current item")]
+    public Color canAffordColor = Color.green;
+    [Tooltip("Flash color for insufficient funds")]
+    public Color insufficientFundsColor = Color.red;
+    [Tooltip("Duration of each flash when funds are insufficient")]
+    public float flashDuration = 0.1f;
+    [Tooltip("Number of flashes when funds are insufficient")]
+    public int numberOfFlashes = 3;
+    
     private AudioSource _audioSource;
+    private Color _originalCurrencyTextColor;
+    private Coroutine _flashCoroutine;
 
     private void Awake()
     {
@@ -38,6 +52,20 @@ public class BuildingShopUI : MonoBehaviour
         if (buyButton != null)
         {
             buyButton.onClick.AddListener(OnBuyButtonClicked);
+        }
+        
+        if (currencyText != null)
+        {
+            _originalCurrencyTextColor = currencyText.color;
+        }
+        
+        if (_audioSource == null)
+        {
+            _audioSource = GetComponent<AudioSource>();
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+            }
         }
     }
     
@@ -66,7 +94,18 @@ public class BuildingShopUI : MonoBehaviour
         if (buyButton != null)
         {
             buyButton.interactable = canAfford;
+        }
+        UpdateCurrencyColor(canAfford);
+    }
+    
+    private void UpdateCurrencyColor(bool canAfford)
+    {
+        if (currencyText != null)
+        {
+            if (_flashCoroutine != null) return;
             
+            // Set color based on whether player can afford the current building
+            currencyText.color = canAfford ? canAffordColor : sufficientFundsColor;
         }
     }
     
@@ -89,6 +128,13 @@ public class BuildingShopUI : MonoBehaviour
         buildingNameText?.SetText(building.displayName);
         buildingCostText?.SetText(building.cost.ToString());
         buildingDescriptionText?.SetText(building.description);
+        
+        // Check if we can afford this building and update color
+        if (shopManager != null)
+        {
+            bool canAfford = shopManager.CurrentCurrency >= building.cost;
+            UpdateCurrencyColor(canAfford);
+        }
     }
     
     private void UpdateCurrencyDisplay(int amount)
@@ -96,6 +142,13 @@ public class BuildingShopUI : MonoBehaviour
         if (currencyText != null)
         {
             currencyText.text = amount.ToString();
+            
+            // Update the color if we have a current building
+            if (shopManager != null && shopManager._currentDisplayedBuilding != null)
+            {
+                bool canAfford = amount >= shopManager._currentDisplayedBuilding.cost;
+                UpdateCurrencyColor(canAfford);
+            }
         }
     }
     
@@ -109,36 +162,58 @@ public class BuildingShopUI : MonoBehaviour
     
     public void PlayInsufficientFundsEffect()
     {
-        if (_audioSource != null && insufficientFundsSound != null)
+        // Check if we have enough money for the current building
+        if (shopManager != null && shopManager._currentDisplayedBuilding != null)
         {
-            _audioSource.PlayOneShot(insufficientFundsSound);
-        }
-        
-        // You could add animation or visual effects here
-        if (currencyText != null)
-        {
-            StartCoroutine(FlashText(currencyText));
+            bool canAfford = shopManager.CurrentCurrency >= shopManager._currentDisplayedBuilding.cost;
+            
+            // Only play effect if we can't afford it
+            if (!canAfford)
+            {
+                if (_audioSource != null && insufficientFundsSound != null)
+                {
+                    _audioSource.PlayOneShot(insufficientFundsSound);
+                }
+                
+                // If we're already flashing, stop that coroutine
+                if (_flashCoroutine != null)
+                {
+                    StopCoroutine(_flashCoroutine);
+                }
+                
+                // Start a new flash coroutine
+                if (currencyText != null)
+                {
+                    _flashCoroutine = StartCoroutine(FlashText(currencyText));
+                }
+            }
         }
     }
     
     private IEnumerator FlashText(TMP_Text text)
     {
-        Color originalColor = text.color;
+        // Store the color we should return to
+        Color returnColor;
+        if (shopManager != null && shopManager._currentDisplayedBuilding != null)
+        {
+            bool canAfford = shopManager.CurrentCurrency >= shopManager._currentDisplayedBuilding.cost;
+            returnColor = canAfford ? canAffordColor : sufficientFundsColor;
+        }
+        else
+        {
+            returnColor = sufficientFundsColor;
+        }
         
-        for (int i = 0; i < 3; i++)
+        // Flash between red and return color
+        for (int i = 0; i < numberOfFlashes; i++)
         {
-            text.color = Color.red;
-            yield return new WaitForSeconds(0.1f);
-            text.color = originalColor;
-            yield return new WaitForSeconds(0.1f);
+            text.color = insufficientFundsColor;
+            yield return new WaitForSeconds(flashDuration);
+            text.color = returnColor;
+            yield return new WaitForSeconds(flashDuration);
         }
-    }
-    
-    public void ToggleShopPanel(bool show)
-    {
-        if (shopPanel != null)
-        {
-            shopPanel.SetActive(show);
-        }
+        
+        // End the coroutine
+        _flashCoroutine = null;
     }
 }
