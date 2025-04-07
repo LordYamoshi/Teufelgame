@@ -16,6 +16,16 @@ public class BuildingShopManager : MonoBehaviour
         public int cost;
         public Sprite previewImage;
         [TextArea] public string description;
+    
+        [Header("Income Generation")]
+        [Tooltip("Whether this building can generate income")]
+        public bool canGenerateIncome = false;
+    
+        [Tooltip("Amount of currency generated each interval")]
+        public int incomeAmount = 10;
+    
+        [Tooltip("Time in seconds between income generation")]
+        public float incomeInterval = 15f;
     }
 
     public List<BuildingOption> availableBuildings = new List<BuildingOption>();
@@ -478,26 +488,33 @@ public class BuildingPlacementTrigger : MonoBehaviour
 {
     private BuildingShopManager _shopManager;
     private GridDragAndDropManager _gridManager;
-    
+
     public void Setup(BuildingShopManager shopManager, GridDragAndDropManager gridManager)
     {
         _shopManager = shopManager;
         _gridManager = gridManager;
     }
-    
+
     private void OnMouseDown()
     {
         if (_gridManager != null)
         {
             // Use the existing object instead of creating a new one
             _gridManager.StartDraggingExistingObject(gameObject);
-            
+
+            // Disable income generation during the placement process
+            BuildingIncomeGenerator incomeGenerator = gameObject.GetComponent<BuildingIncomeGenerator>();
+            if (incomeGenerator != null)
+            {
+                incomeGenerator.StopIncomeGeneration();
+            }
+
             // Notify the shop manager when placement has begun
             if (_shopManager != null)
             {
                 _shopManager.OnBuildingPlaced(gameObject);
             }
-            
+
             // Remove this component as it's no longer needed
             Destroy(this);
         }

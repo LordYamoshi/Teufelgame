@@ -788,6 +788,16 @@ public class GridDragAndDropManager : MonoBehaviour
 
             // Fire the building placed event
             OnBuildingPlaced?.Invoke();
+
+            // Notify the BuildingIncomeGenerator that the object has been placed
+            if (wasPlaced)
+            {
+                BuildingIncomeGenerator incomeGenerator = _selectedObject.GetComponent<BuildingIncomeGenerator>();
+                if (incomeGenerator != null)
+                {
+                    incomeGenerator.OnPlacedOnGrid();
+                }
+            }
         }
         else
         {
@@ -804,7 +814,8 @@ public class GridDragAndDropManager : MonoBehaviour
             _selectedGridObject.UpdateCurrentGridPositions(_originalGridPosition);
 
             // Reset rotation transform
-            _selectedObject.transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, _originalRotation * 90, 0);
+            _selectedObject.transform.rotation =
+                Quaternion.Euler(transform.rotation.eulerAngles.x, _originalRotation * 90, 0);
 
             // Position back at original location
             DirectPositioning(_selectedObject, _selectedGridObject, _originalGridPosition);
@@ -841,11 +852,11 @@ public class GridDragAndDropManager : MonoBehaviour
         {
             // Make sure rotation is set correctly
             _placementObject.transform.rotation = Quaternion.Euler(
-                _placementObject.transform.rotation.eulerAngles.x, 
-                _previewGridObject.rotationIndex * 90, 
+                _placementObject.transform.rotation.eulerAngles.x,
+                _previewGridObject.rotationIndex * 90,
                 0
             );
-            
+
             // Enable colliders on the placed object
             Collider[] colliders = _placementObject.GetComponentsInChildren<Collider>();
             foreach (var collider in colliders)
@@ -869,6 +880,13 @@ public class GridDragAndDropManager : MonoBehaviour
 
             // Restore original materials
             _previewGridObject.RestoreOriginalMaterials();
+
+            // Notify the BuildingIncomeGenerator that the object has been placed
+            BuildingIncomeGenerator incomeGenerator = _placementObject.GetComponent<BuildingIncomeGenerator>();
+            if (incomeGenerator != null)
+            {
+                incomeGenerator.OnPlacedOnGrid();
+            }
 
             Debug.Log(
                 $"New object placed at {gridPosition}, occupying {occupiedCells.Count} cells with rotation {_previewGridObject.rotationIndex * 90}°");

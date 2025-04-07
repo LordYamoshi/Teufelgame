@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 2843351859158485687}
   - component: {fileID: 141634193191941077}
   - component: {fileID: 6256805051610912852}
+  - component: {fileID: -5226310358054056936}
   m_Layer: 6
   m_Name: PlayersAirport
   m_TagString: Untagged
@@ -135,3 +136,22 @@ MonoBehaviour:
   saveFolder: GridShapes
   loadShapeOnStart: Airport
   visualOffset: {x: 0, y: 1, z: 0}
+--- !u!114 &-5226310358054056936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6128971476781655698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93f61e55c657df64daaa94c606062350, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canGenerateIncome: 1
+  incomeAmount: 10
+  incomeInterval: 3
+  incomeEffectPrefab: {fileID: 9188421176723112645, guid: 9e47874047632ae4391c93ee3878c875, type: 3}
+  OnIncomeGenerated:
+    m_PersistentCalls:
+      m_Calls: []

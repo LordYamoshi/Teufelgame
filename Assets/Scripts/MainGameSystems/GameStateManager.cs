@@ -6,23 +6,41 @@ using UnityEngine.Events;
 
 public class GameStateManager : MonoBehaviour
 {
-    [Header("Manager References")] public BuildingShopManager shopManager;
+    [Header("Manager References")] 
+    public BuildingShopManager shopManager;
     public GridManager gridManager;
     public GridDragAndDropManager dragAndDropManager;
 
-    [Header("UI References")] public GameObject winPanel;
+    [Header("UI References")] 
+    public GameObject winPanel;
     public GameObject losePanel;
 
-    [Header("Game Events")] public UnityEvent OnGameWin;
+    [Header("Game Events")] 
+    public UnityEvent OnGameWin;
     public UnityEvent OnGameLose;
+    public UnityEvent<bool> OnGameStateChanged;
 
-    [Header("Game Settings")] [Tooltip("Time to wait after placement before checking game state")]
+    [Header("Game Settings")] 
+    [Tooltip("Time to wait after placement before checking game state")]
     public float checkDelay = 0.5f;
 
     [Tooltip("Should we automatically check for potential placement after each building is placed?")]
     public bool autoCheckAfterPlacement = true;
+    
+    [Tooltip("Whether to check win conditions after placing the final building")]
+    public bool checkWinOnFinalBuilding = true;
+
+    [Header("Debug")]
+    [Tooltip("Enable detailed logging")]
+    public bool verboseLogging = false;
+    
+    [Tooltip("Show debug visualization of possible placements")]
+    public bool showDebugVisualization = false;
 
     private bool _gameEnded = false;
+    private BuildingShopManager.BuildingOption _lastPlacedBuilding = null;
+    private int _checkCount = 0; // Used to track delayed checks
+    private bool _isCheckingGameState = false; // Flag to prevent overlapping checks
 
     private void Start()
     {
@@ -34,35 +52,115 @@ public class GameStateManager : MonoBehaviour
         if (gridManager == null) gridManager = FindObjectOfType<GridManager>();
         if (dragAndDropManager == null) dragAndDropManager = FindObjectOfType<GridDragAndDropManager>();
 
-        // Listen for building placement events
+        // Register event listeners
         if (dragAndDropManager != null)
         {
             dragAndDropManager.OnBuildingPlaced.AddListener(OnBuildingPlaced);
         }
 
-        // Listen for building purchase events to check if there are more buildings
         if (shopManager != null)
         {
             shopManager.OnBuildingPurchased.AddListener(OnBuildingPurchased);
+        }
+        
+        if (verboseLogging)
+        {
+            Debug.Log("GameStateManager initialized. Auto-check: " + autoCheckAfterPlacement);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Unregister event listeners
+        if (dragAndDropManager != null)
+        {
+            dragAndDropManager.OnBuildingPlaced.RemoveListener(OnBuildingPlaced);
+        }
+
+        if (shopManager != null)
+        {
+            shopManager.OnBuildingPurchased.RemoveListener(OnBuildingPurchased);
         }
     }
 
     private void OnBuildingPurchased(BuildingShopManager.BuildingOption building)
     {
-        // When a building is purchased, we'll check for placement possibilities after it's placed
+        _lastPlacedBuilding = building;
+        
+        if (verboseLogging)
+        {
+            Debug.Log($"Building purchased: {building.displayName}");
+        }
+        
+        // Don't check immediately - wait for placement
+    }
+
+    private void OnBuildingPlaced()
+    {
+        if (_gameEnded) return;
+
+        // After a building is placed, check game state with delay
+        StartCoroutine(DelayedGameStateCheck());
+    }
+
+    private IEnumerator DelayedGameStateCheck()
+    {
+        // Generate a unique check ID
+        int thisCheckID = ++_checkCount;
+        
+        // Wait for a moment to ensure everything is settled
+        yield return new WaitForSeconds(checkDelay);
+        
+        // Only proceed if this is still the most recent check 
+        // (prevents multiple overlapping checks)
+        if (thisCheckID != _checkCount) yield break;
+        
+        // Make sure placement is complete
+        if (shopManager._currentPlacementObject != null)
+        {
+            if (verboseLogging)
+            {
+                Debug.Log("Skipping game state check - building still being placed");
+            }
+            yield break;
+        }
+
+        // Check if this was potentially the final placement
+        bool isFinalPlacement = shopManager._currentBuildingIndex >= shopManager._buildingSequence.Count &&
+                               !shopManager.loopBuildings;
+
+        if (verboseLogging)
+        {
+            Debug.Log($"Checking game state... Final placement? {isFinalPlacement}");
+        }
+
+        // Check for win condition if appropriate
+        if (checkWinOnFinalBuilding && isFinalPlacement)
+        {
+            if (verboseLogging)
+            {
+                Debug.Log("All buildings placed. Checking for victory condition.");
+            }
+            CheckForVictory();
+        }
+
+        // Don't do additional checks if game has ended
+        if (_gameEnded) yield break;
+
+        // Check if next building can be placed
         if (autoCheckAfterPlacement)
         {
-            StartCoroutine(CheckAfterPlacementDelay());
+            CheckCanPlaceCurrentBuilding();
         }
     }
 
-    private IEnumerator CheckAfterPlacementDelay()
+    public void CheckGameState()
     {
-        // Wait a moment to allow the placement to complete
-        yield return new WaitForSeconds(checkDelay);
-
-        // Check if the building was successfully placed
-        if (shopManager._currentPlacementObject == null)
+        if (_gameEnded || _isCheckingGameState) return;
+        
+        _isCheckingGameState = true;
+        
+        try 
         {
             CheckForVictory();
 
@@ -71,52 +169,37 @@ public class GameStateManager : MonoBehaviour
                 CheckCanPlaceCurrentBuilding();
             }
         }
-    }
-
-    // This should be called from GridDragAndDropManager after a building is placed
-    public void OnBuildingPlaced()
-    {
-        StartCoroutine(DelayedCheckAfterPlacement());
-    }
-
-    private IEnumerator DelayedCheckAfterPlacement()
-    {
-        // Wait a moment for everything to update
-        yield return new WaitForSeconds(0.5f);
-
-        //Check if the building was actually placed
-        if (shopManager._currentPlacementObject == null)
+        finally
         {
-            CheckForVictory();
-        }
-
-        // If we haven't won, check if the next building can be placed
-        if (!_gameEnded)
-        {
-            CheckCanPlaceCurrentBuilding();
+            _isCheckingGameState = false;
         }
     }
 
     private void CheckForVictory()
     {
+        if (_gameEnded) return;
+
+        bool hasWon = false;
+        
+        // Has completed all buildings and they are placed?
         if (shopManager != null &&
             shopManager._currentBuildingIndex >= shopManager._buildingSequence.Count &&
             !shopManager.loopBuildings &&
             shopManager._currentPlacementObject == null)
         {
-            Win();
+            if (verboseLogging)
+            {
+                Debug.Log("Victory condition met: All buildings used and placed.");
+            }
+            hasWon = true;
         }
-    }
+        
+        // Add any additional victory conditions here
+        // ...
 
-    public void CheckGameState()
-    {
-        if (_gameEnded) return;
-
-        CheckForVictory();
-
-        if (!_gameEnded)
+        if (hasWon)
         {
-            CheckCanPlaceCurrentBuilding();
+            Win();
         }
     }
 
@@ -126,9 +209,19 @@ public class GameStateManager : MonoBehaviour
 
         // Get current building
         BuildingShopManager.BuildingOption currentBuilding = shopManager._currentDisplayedBuilding;
-        if (currentBuilding == null || currentBuilding.buildingPrefab == null) return;
+        if (currentBuilding == null || currentBuilding.buildingPrefab == null) 
+        {
+            if (verboseLogging)
+            {
+                Debug.Log("No current building to check for placement");
+            }
+            return;
+        }
 
-        Debug.Log($"Checking if {currentBuilding.displayName} can be placed...");
+        if (verboseLogging)
+        {
+            Debug.Log($"Checking if {currentBuilding.displayName} can be placed...");
+        }
 
         // Create test building
         GameObject testObj = Instantiate(currentBuilding.buildingPrefab);
@@ -137,56 +230,72 @@ public class GameStateManager : MonoBehaviour
 
         if (gridObject == null)
         {
+            Debug.LogWarning("Building prefab has no GridObject component!");
             Destroy(testObj);
             return;
         }
 
-        // Check if this is the first building (special case)
-        bool isFirstBuilding = gridManager.GetAllPlacedObjects().Count == 0;
+        try
+        {
+            // Check if we can place it somewhere
+            bool canPlace = CanPlaceBuilding(gridObject);
+        
+            if (verboseLogging)
+            {
+                Debug.Log($"Can place {currentBuilding.displayName}: {canPlace}");
+            }
+        
+            // Show debug visualization if enabled
+            if (showDebugVisualization)
+            {
+                VisualizeValidPlacements();
+            }
 
-        // If not the first building, get all cells adjacent to existing buildings
+            if (!canPlace)
+            {
+                Debug.Log($"GAME OVER: Building '{currentBuilding.displayName}' cannot be placed!");
+                Lose();
+            }
+            else if (verboseLogging)
+            {
+                Debug.Log($"Building '{currentBuilding.displayName}' can be placed. Game continues.");
+            }
+        }
+        finally
+        {
+            Destroy(testObj);
+        }
+    }
+
+    /// <summary>
+    /// Checks if a building can be placed somewhere on the grid
+    /// </summary>
+    private bool CanPlaceBuilding(GridObject gridObject)
+    {
+        bool isFirstBuilding = !gridManager.FirstObjectPlaced || gridManager.GetPlayerPlacedObjectCount() == 0;
+
+        if (verboseLogging)
+        {
+            Debug.Log($"CanPlaceBuilding - Is first building: {isFirstBuilding}");
+            Debug.Log($"CanPlaceBuilding - FirstObjectPlaced flag: {gridManager.FirstObjectPlaced}");
+            Debug.Log($"CanPlaceBuilding - Player placed count: {gridManager.GetPlayerPlacedObjectCount()}");
+        }
+
+        // If not first building, find all cells adjacent to existing buildings
         HashSet<Vector2Int> adjacentCells = new HashSet<Vector2Int>();
 
         if (!isFirstBuilding)
         {
-            // Collect all cells occupied by existing buildings
-            List<Vector2Int> existingBuildingCells = new List<Vector2Int>();
-            foreach (var kvp in gridManager.GetAllPlacedObjects())
+            adjacentCells = GetAdjacentCells();
+
+            if (adjacentCells.Count == 0)
             {
-                existingBuildingCells.AddRange(kvp.Value);
+                Debug.LogWarning("No adjacent cells found but not first building - scanning entire grid as fallback");
+                isFirstBuilding = true;
             }
-
-            // Find all adjacent cells (that aren't already occupied)
-            foreach (var cell in existingBuildingCells)
-            {
-                // Check in all four directions
-                Vector2Int[] directions = new Vector2Int[]
-                {
-                    new Vector2Int(1, 0), new Vector2Int(-1, 0),
-                    new Vector2Int(0, 1), new Vector2Int(0, -1)
-                };
-
-                foreach (var dir in directions)
-                {
-                    Vector2Int adjacent = cell + dir;
-
-                    // Only add if within bounds and not already occupied
-                    if (gridManager.IsWithinGridBounds(adjacent) &&
-                        gridManager.IsCellValid(adjacent) &&
-                        !existingBuildingCells.Contains(adjacent))
-                    {
-                        adjacentCells.Add(adjacent);
-                    }
-                }
-            }
-
-            Debug.Log($"Found {adjacentCells.Count} cells adjacent to existing buildings");
         }
 
-        // Try all rotations and valid positions
-        bool canPlace = false;
-
-        // Try each rotation
+        // Try all rotations
         for (int rot = 0; rot < 4; rot++)
         {
             gridObject.rotationIndex = rot;
@@ -194,115 +303,132 @@ public class GameStateManager : MonoBehaviour
 
             if (isFirstBuilding)
             {
-                // For first building, check the entire grid
-                for (int x = 0; x < gridManager.maxWidth; x++)
+                // For first building, scan the entire grid
+                if (TryScanEntireGrid(gridObject))
                 {
-                    for (int y = 0; y < gridManager.maxDepth; y++)
-                    {
-                        Vector2Int pos = new Vector2Int(x, y);
-                        List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(pos);
-
-                        if (gridManager.IsValidPlacement(occupiedCells))
-                        {
-                            canPlace = true;
-                            break;
-                        }
-                    }
-
-                    if (canPlace) break;
+                    return true;
                 }
             }
             else
             {
-                // For subsequent buildings, only check adjacent cells
+                // For subsequent buildings, check only adjacent cells
                 foreach (var adjacentCell in adjacentCells)
                 {
                     List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(adjacentCell);
 
                     if (gridManager.IsValidPlacement(occupiedCells))
                     {
-                        canPlace = true;
-                        break;
+                        if (verboseLogging)
+                        {
+                            Debug.Log($"Found valid placement at {adjacentCell} with rotation {rot}");
+                        }
+
+                        return true;
                     }
                 }
             }
-
-            if (canPlace) break;
         }
 
-        Destroy(testObj);
+        // No valid placement found
+        return false;
+    }
 
-        // Trigger lose condition if building can't be placed
-        if (!canPlace)
+    /// <summary>
+    /// Scans the entire grid for a valid placement position
+    /// </summary>
+    private bool TryScanEntireGrid(GridObject gridObject)
+    {
+        for (int x = 0; x < gridManager.maxWidth; x++)
         {
-            Debug.Log($"GAME OVER: Building '{currentBuilding.displayName}' cannot be placed!");
-            Lose();
+            for (int y = 0; y < gridManager.maxDepth; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+                List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(pos);
+
+                if (gridManager.IsValidPlacement(occupiedCells))
+                {
+                    if (verboseLogging)
+                    {
+                        Debug.Log($"Found valid placement at {pos} for first building");
+                    }
+                    return true;
+                }
+            }
         }
+        return false;
     }
-    public void VisualizeValidPlacements()
-{
-    // Clear any existing markers
-    foreach(var marker in GameObject.FindGameObjectsWithTag("DebugMarker"))
+
+    /// <summary>
+    /// Gets all cells adjacent to existing player-placed buildings
+    /// </summary>
+    private HashSet<Vector2Int> GetAdjacentCells()
     {
-        Destroy(marker);
-    }
-    
-    // First visualize the grid bounds to see the actual grid
-    VisualizeGridBounds();
-    
-    // Get the current building
-    BuildingShopManager.BuildingOption currentBuilding = shopManager._currentDisplayedBuilding;
-    if (currentBuilding == null)
-    {
-        Debug.LogError("No current building to check!");
-        return;
-    }
-    
-    Debug.Log($"Checking valid placements for: {currentBuilding.displayName}");
-    
-    // Create a test object
-    GameObject testObj = Instantiate(currentBuilding.buildingPrefab);
-    testObj.SetActive(false);
-    GridObject gridObject = testObj.GetComponent<GridObject>();
-    
-    if (gridObject == null)
-    {
-        Debug.LogError("Building has no GridObject component!");
-        Destroy(testObj);
-        return;
-    }
-    
-    // Get existing buildings
-    var placedObjects = gridManager.GetAllPlacedObjects();
-    bool isFirstBuilding = placedObjects.Count == 0;
-    
-    // Find cells adjacent to existing buildings
-    HashSet<Vector2Int> adjacentCells = new HashSet<Vector2Int>();
-    
-    if (!isFirstBuilding)
-    {
-        // Collect all cells occupied by existing buildings
+        HashSet<Vector2Int> adjacentCells = new HashSet<Vector2Int>();
+
+        // Collect all cells occupied by existing player-placed buildings
         List<Vector2Int> existingBuildingCells = new List<Vector2Int>();
+        Dictionary<GameObject, List<Vector2Int>> placedObjects = gridManager.GetAllPlacedObjects();
+
+        // Count of player-placed buildings (for debugging)
+        int playerPlacedCount = 0;
+
         foreach (var kvp in placedObjects)
         {
+            // Skip preplaced objects when checking for adjacency
+            if (gridManager.IsPreplacedObject(kvp.Key))
+            {
+                if (verboseLogging)
+                {
+                    Debug.Log($"Skipping pre-placed object {kvp.Key.name} with {kvp.Value.Count} cells");
+                }
+
+                continue;
+            }
+
+            playerPlacedCount++;
             existingBuildingCells.AddRange(kvp.Value);
+
+            if (verboseLogging)
+            {
+                Debug.Log($"Adding player-placed object {kvp.Key.name} with {kvp.Value.Count} cells");
+            }
         }
-        
+
+        if (verboseLogging)
+        {
+            Debug.Log(
+                $"Found {playerPlacedCount} player-placed objects with a total of {existingBuildingCells.Count} cells");
+        }
+
+        // Let's manually handle the first building edge case
+        // If there are truly no player-placed buildings (including the incorrect case)
+        if (existingBuildingCells.Count == 0)
+        {
+            if (verboseLogging)
+            {
+                Debug.Log("No player-placed objects found, treating as first building placement");
+            }
+
+            // Return empty set - caller will scan entire grid
+            return adjacentCells;
+        }
+
         // Find all adjacent cells (that aren't already occupied)
         foreach (var cell in existingBuildingCells)
         {
-            // Check in all four directions
-            Vector2Int[] directions = new Vector2Int[] {
+            // Check the four cardinal directions
+            Vector2Int[] directions = new Vector2Int[]
+            {
                 new Vector2Int(1, 0), new Vector2Int(-1, 0),
                 new Vector2Int(0, 1), new Vector2Int(0, -1)
             };
-            
+
             foreach (var dir in directions)
             {
                 Vector2Int adjacent = cell + dir;
-                
+
                 // Only add if within bounds and not already occupied
-                if (gridManager.IsWithinGridBounds(adjacent) && 
+                if (gridManager.IsWithinGridBounds(adjacent) &&
                     gridManager.IsCellValid(adjacent) &&
                     !existingBuildingCells.Contains(adjacent))
                 {
@@ -310,38 +436,127 @@ public class GameStateManager : MonoBehaviour
                 }
             }
         }
-        
-        Debug.Log($"Found {adjacentCells.Count} cells adjacent to existing buildings");
-    }
-    
-    // Track valid positions
-    List<Vector3> validWorldPositions = new List<Vector3>();
-    HashSet<string> uniqueValidPositions = new HashSet<string>();
-    
-    // Try each rotation
-    for (int rot = 0; rot < 4; rot++)
-    {
-        gridObject.rotationIndex = rot;
-        gridObject.CalculateRelativeCellPositions();
-        
-        if (isFirstBuilding)
+
+        if (verboseLogging)
         {
-            // For first building, check entire grid
-            for (int x = 0; x < gridManager.maxWidth; x++)
+            Debug.Log($"Found {adjacentCells.Count} cells adjacent to player-placed buildings");
+        }
+
+        return adjacentCells;
+    }
+
+    public void VisualizeValidPlacements()
+    {
+        // Clear any existing markers
+        foreach(var marker in GameObject.FindGameObjectsWithTag("DebugMarker"))
+        {
+            Destroy(marker);
+        }
+        
+        // First visualize the grid bounds to see the actual grid
+        VisualizeGridBounds();
+        
+        // Get the current building
+        BuildingShopManager.BuildingOption currentBuilding = shopManager._currentDisplayedBuilding;
+        if (currentBuilding == null)
+        {
+            Debug.LogWarning("No current building to check!");
+            return;
+        }
+        
+        Debug.Log($"Checking valid placements for: {currentBuilding.displayName}");
+        
+        // Create a test object
+        GameObject testObj = Instantiate(currentBuilding.buildingPrefab);
+        testObj.SetActive(false);
+        GridObject gridObject = testObj.GetComponent<GridObject>();
+        
+        if (gridObject == null)
+        {
+            Debug.LogError("Building has no GridObject component!");
+            Destroy(testObj);
+            return;
+        }
+        
+        // Get existing buildings
+        var placedObjects = gridManager.GetAllPlacedObjects();
+        bool isFirstBuilding = placedObjects.Count == 0;
+        
+        // Find cells adjacent to existing buildings
+        HashSet<Vector2Int> adjacentCells = new HashSet<Vector2Int>();
+        
+        if (!isFirstBuilding)
+        {
+            // Use the helper method
+            adjacentCells = GetAdjacentCells();
+            
+            Debug.Log($"Found {adjacentCells.Count} cells adjacent to existing buildings");
+        }
+        
+        // Track valid positions
+        List<Vector3> validWorldPositions = new List<Vector3>();
+        HashSet<string> uniqueValidPositions = new HashSet<string>();
+        
+        // Try each rotation
+        for (int rot = 0; rot < 4; rot++)
+        {
+            gridObject.rotationIndex = rot;
+            gridObject.CalculateRelativeCellPositions();
+            
+            if (isFirstBuilding)
             {
-                for (int y = 0; y < gridManager.maxDepth; y++)
+                // For first building, check entire grid
+                for (int x = 0; x < gridManager.maxWidth; x++)
                 {
-                    Vector2Int pos = new Vector2Int(x, y);
-                    
-                    // Skip if not a valid cell
-                    if (!gridManager.IsWithinGridBounds(pos) || !gridManager.IsCellValid(pos))
+                    for (int y = 0; y < gridManager.maxDepth; y++)
                     {
-                        continue;
+                        Vector2Int pos = new Vector2Int(x, y);
+                        
+                        // Skip if not a valid cell
+                        if (!gridManager.IsWithinGridBounds(pos) || !gridManager.IsCellValid(pos))
+                        {
+                            continue;
+                        }
+                        
+                        List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(pos);
+                        
+                        // Double-check each cell in the building is valid
+                        bool allCellsValid = true;
+                        foreach (var cell in occupiedCells)
+                        {
+                            if (!gridManager.IsWithinGridBounds(cell) || !gridManager.IsCellValid(cell))
+                            {
+                                allCellsValid = false;
+                                break;
+                            }
+                        }
+                        
+                        if (allCellsValid && gridManager.IsValidPlacement(occupiedCells))
+                        {
+                            // Use a hash to avoid duplicates
+                            string cellsHash = string.Join(",", occupiedCells.OrderBy(c => c.x).ThenBy(c => c.y));
+                            
+                            if (!uniqueValidPositions.Contains(cellsHash))
+                            {
+                                uniqueValidPositions.Add(cellsHash);
+                                validWorldPositions.Add(gridManager.GetWorldPosition(pos));
+                                if (verboseLogging)
+                                {
+                                    Debug.Log($"Valid placement at ({x},{y}) with rotation {rot}");
+                                }
+                            }
+                        }
                     }
+                }
+            }
+            else
+            {
+                // For subsequent buildings, only check adjacent to existing
+                foreach (var basePos in adjacentCells)
+                {
+                    List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(basePos);
                     
-                    List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(pos);
-                    
-                    // Double-check each cell in the building is valid
+                    // Check if all cells are valid
                     bool allCellsValid = true;
                     foreach (var cell in occupiedCells)
                     {
@@ -360,74 +575,44 @@ public class GameStateManager : MonoBehaviour
                         if (!uniqueValidPositions.Contains(cellsHash))
                         {
                             uniqueValidPositions.Add(cellsHash);
-                            validWorldPositions.Add(gridManager.GetWorldPosition(pos));
-                            Debug.Log($"Valid placement at ({x},{y}) with rotation {rot}");
+                            validWorldPositions.Add(gridManager.GetWorldPosition(basePos));
+                            if (verboseLogging)
+                            {
+                                Debug.Log($"Valid placement at {basePos} with rotation {rot}");
+                            }
                         }
                     }
                 }
             }
         }
-        else
+        
+        // Create markers for valid positions
+        foreach (var worldPos in validWorldPositions)
         {
-            // For subsequent buildings, only check adjacent to existing
-            foreach (var basePos in adjacentCells)
+            // Double check this position is within grid bounds
+            Vector2Int gridPos = gridManager.GetGridPosition(worldPos);
+            if (!gridManager.IsWithinGridBounds(gridPos) || !gridManager.IsCellValid(gridPos))
             {
-                List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(basePos);
-                
-                // Check if all cells are valid
-                bool allCellsValid = true;
-                foreach (var cell in occupiedCells)
-                {
-                    if (!gridManager.IsWithinGridBounds(cell) || !gridManager.IsCellValid(cell))
-                    {
-                        allCellsValid = false;
-                        break;
-                    }
-                }
-                
-                if (allCellsValid && gridManager.IsValidPlacement(occupiedCells))
-                {
-                    // Use a hash to avoid duplicates
-                    string cellsHash = string.Join(",", occupiedCells.OrderBy(c => c.x).ThenBy(c => c.y));
-                    
-                    if (!uniqueValidPositions.Contains(cellsHash))
-                    {
-                        uniqueValidPositions.Add(cellsHash);
-                        validWorldPositions.Add(gridManager.GetWorldPosition(basePos));
-                        Debug.Log($"Valid placement at {basePos} with rotation {rot}");
-                    }
-                }
+                Debug.LogWarning($"Position {worldPos} converts to invalid grid position {gridPos} - skipping");
+                continue;
             }
-        }
-    }
-    
-    // Create markers for valid positions
-    foreach (var worldPos in validWorldPositions)
-    {
-        // Double check this position is within grid bounds
-        Vector2Int gridPos = gridManager.GetGridPosition(worldPos);
-        if (!gridManager.IsWithinGridBounds(gridPos) || !gridManager.IsCellValid(gridPos))
-        {
-            Debug.LogWarning($"Position {worldPos} converts to invalid grid position {gridPos} - skipping");
-            continue;
+            
+            GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            marker.transform.position = worldPos + Vector3.up * 0.5f;
+            marker.transform.localScale = Vector3.one * 0.3f;
+            marker.GetComponent<Renderer>().material.color = Color.green;
+            marker.tag = "DebugMarker";
         }
         
-        GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        marker.transform.position = worldPos + Vector3.up * 0.5f;
-        marker.transform.localScale = Vector3.one * 0.3f;
-        marker.GetComponent<Renderer>().material.color = Color.green;
-        marker.tag = "DebugMarker";
+        Debug.Log($"Found {uniqueValidPositions.Count} unique valid positions");
+        
+        if (uniqueValidPositions.Count == 0)
+        {
+            Debug.Log("NO VALID PLACEMENTS - Triggering game over");
+        }
+        
+        Destroy(testObj);
     }
-    
-    Debug.Log($"Found {uniqueValidPositions.Count} unique valid positions");
-    
-    if (uniqueValidPositions.Count == 0)
-    {
-        Debug.Log("NO VALID PLACEMENTS - Should trigger game over!");
-    }
-    
-    Destroy(testObj);
-}
 
     public void VisualizeGridBounds()
     {
@@ -457,9 +642,8 @@ public class GameStateManager : MonoBehaviour
 
                     // Blue for valid cells, red for invalid
                     marker.GetComponent<Renderer>().material.color = isValid
-                        ? new Color(0, 0, 1, 0.3f)
-                        : // Transparent blue
-                        new Color(1, 0, 0, 0.3f); // Transparent red
+                        ? new Color(0, 0, 1, 0.3f) // Transparent blue
+                        : new Color(1, 0, 0, 0.3f); // Transparent red
 
                     marker.tag = "GridMarker";
                 }
@@ -473,11 +657,14 @@ public class GameStateManager : MonoBehaviour
         
         _gameEnded = true;
         
+        Debug.Log("GAME WIN!");
+        
         // Show win UI
         if (winPanel != null) winPanel.SetActive(true);
         
-        // Trigger event
+        // Trigger events
         OnGameWin?.Invoke();
+        OnGameStateChanged?.Invoke(true);
     }
     
     private void Lose()
@@ -486,10 +673,21 @@ public class GameStateManager : MonoBehaviour
         
         _gameEnded = true;
         
+        Debug.Log("GAME OVER!");
+        
         // Show lose UI
         if (losePanel != null) losePanel.SetActive(true);
         
-        // Trigger event
+        // Trigger events
         OnGameLose?.Invoke();
+        OnGameStateChanged?.Invoke(false);
+    }
+
+    // Public method for restarting the game
+    public void RestartGame()
+    {
+        // Add restart logic here
+        UnityEngine.SceneManagement.SceneManager.LoadScene(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
     }
 }
