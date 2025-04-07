@@ -28,8 +28,8 @@ public class CustomCursor : MonoBehaviour
 
     void Start()
     {
-        image.sprite = destructable;
-        //image.sprite = standard;
+        //image.sprite = destructable;
+        image.sprite = standard;
     }
 
     void LateUpdate()
