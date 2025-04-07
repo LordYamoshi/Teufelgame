@@ -123,7 +123,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74db20a996e40df4b8cbdd11346e5f52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pivotCell: {x: 1, y: 0}
+  pivotCell: {x: 0, y: 0}
   currentShapeType: 5
   shapeSize: 2
   autoUpdateShape: 0

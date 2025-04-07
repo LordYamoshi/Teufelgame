@@ -257,27 +257,37 @@ public class GridObject : MonoBehaviour
     
     public Vector2Int RotatePosition(Vector2Int position, int rotationIdx)
     {
-        // Flip the rotation direction (counterclockwise instead of clockwise)
+        Vector2Int relativeToPivot = position - pivotCell;
+
+        Vector2Int rotated;
         switch (rotationIdx)
         {
             case 0: // 0 degrees
-                return position;
-            
-            case 1:
-                return new Vector2Int(position.y, -position.x);
-            
+                rotated = relativeToPivot;
+                break;
+            case 1: // 90 degrees clockwise
+                rotated = new Vector2Int(-relativeToPivot.y, relativeToPivot.x);
+                break;
             case 2: // 180 degrees
-                return new Vector2Int(-position.x, -position.y);
-            
-            case 3: 
-                return new Vector2Int(-position.y, position.x);
-            
+                rotated = new Vector2Int(-relativeToPivot.x, -relativeToPivot.y);
+                break;
+            case 3: // 270 degrees clockwise
+                rotated = new Vector2Int(relativeToPivot.y, -relativeToPivot.x);
+                break;
             default:
                 Debug.LogError($"Invalid rotation index: {rotationIdx}");
-                return position;
+                rotated = relativeToPivot;
+                break;
         }
+
+        // Convert back to absolute position
+        Vector2Int finalPosition = rotated + pivotCell;
+
+        Debug.Log($"Rotating {position} (pivot: {pivotCell}) to {finalPosition} at rotation {rotationIdx}");
+
+        return finalPosition;
     }
-    
+
     /// <summary>
     /// Sets the object's grid layout
     /// </summary>

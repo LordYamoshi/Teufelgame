@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1536
     height: 780.8
   m_ShowMode: 4
-  m_Title: Inspector
+  m_Title: Hierarchy
   m_RootView: {fileID: 8}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -121,7 +121,7 @@ MonoBehaviour:
   m_MinSize: {x: 1000, y: 526}
   m_MaxSize: {x: 4000, y: 4026}
   vertical: 0
-  controlID: 893
+  controlID: 147
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -173,7 +173,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 50}
   m_MaxSize: {x: 8096, y: 8096}
   vertical: 0
-  controlID: 905
+  controlID: 16
   draggingID: 0
 --- !u!114 &8
 MonoBehaviour:
@@ -270,7 +270,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 13352
+  controlID: 78
   draggingID: 0
 --- !u!114 &12
 MonoBehaviour:
@@ -296,7 +296,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 13353
+  controlID: 79
   draggingID: 0
 --- !u!114 &13
 MonoBehaviour:
@@ -322,7 +322,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 50}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 13354
+  controlID: 70
   draggingID: 0
 --- !u!114 &14
 MonoBehaviour:
@@ -1218,7 +1218,7 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: 42f8fcffdc11feff3a14feff242bfeffc42dfeffb067fefff25affffb65cffff4063ffffd670ffffc672ffffe673ffff0e76ffff3278ffff687affff567cffff267effff308affff068cffffea8dffffba8fffffd491ffff8292ffff2e94ffff0296ffffaaa2ffff7aa4ffffe2a5ffff8ea6ffffcaa7ffffccccffff16ceffff56d0ffffc2d2ffff28d5ffffb6d9ffff1cfbffffcec40000b2c6000074cb0000cce40000320601009c060100f20901000e0a01000a0b0100
+      m_ExpandedIDs: a2b0ffff1cfbffffcabe0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1838,7 +1838,7 @@ MonoBehaviour:
   m_Position:
     m_Target: {x: 13.190461, y: 88.36556, z: -3.5249689}
     speed: 2
-    m_Value: {x: -10.861864, y: 4.287038, z: -17.695057}
+    m_Value: {x: -1.2323065, y: 1.3030415, z: -2.8484516}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1890,7 +1890,7 @@ MonoBehaviour:
   m_Size:
     m_Target: 30.027634
     speed: 2
-    m_Value: 1.121771
+    m_Value: 1.3468223
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -2080,7 +2080,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Prefabs/Trump
+    - Assets/Scripts/BuyingSystem/Managers
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -2090,7 +2090,7 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Prefabs/Trump
+  - Assets/Scripts/BuyingSystem/Managers
   m_LastFoldersGridSize: -1
   m_LastProjectPath: C:\Users\lordy\Desktop\GitHub Projects\Teufelgame
   m_LockTracker:
