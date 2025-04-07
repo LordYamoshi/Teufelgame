@@ -1548,6 +1548,11 @@ MonoBehaviour:
   purchaseSound: {fileID: 0}
   insufficientFundsSound: {fileID: 0}
   shopManager: {fileID: 1350008878}
+  sufficientFundsColor: {r: 1, g: 1, b: 1, a: 1}
+  canAffordColor: {r: 0, g: 1, b: 0, a: 1}
+  insufficientFundsColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.1
+  numberOfFlashes: 3
 --- !u!1 &953956897
 GameObject:
   m_ObjectHideFlags: 0
@@ -2629,7 +2634,7 @@ MonoBehaviour:
     incomeInterval: 15
   - buildingPrefab: {fileID: 5803172906976268831, guid: 99648ee933957b544aafa5c42b91c5ee, type: 3}
     displayName: Strip Club
-    cost: 2424
+    cost: 300
     previewImage: {fileID: 21300000, guid: 88418a1da0dd5a34fa8ceacd4c8550ec, type: 3}
     description: Essential to improving Gaza, trust me.
     canGenerateIncome: 0
@@ -2637,7 +2642,7 @@ MonoBehaviour:
     incomeInterval: 15
   - buildingPrefab: {fileID: 5803172906976268831, guid: 8cbb67838ccde1f41895b2e8c32edce1, type: 3}
     displayName: Statue
-    cost: 500
+    cost: 600
     previewImage: {fileID: 21300000, guid: 0fa7eaca3cefa834c92281ffbd3c5b30, type: 3}
     description: An important milestone for the folk of Gaza.
     canGenerateIncome: 0
@@ -2645,7 +2650,7 @@ MonoBehaviour:
     incomeInterval: 15
   - buildingPrefab: {fileID: 5803172906976268831, guid: 05603e920e3f2584bad9bf73e14af913, type: 3}
     displayName: Golf Course
-    cost: 400
+    cost: 1000
     previewImage: {fileID: 21300000, guid: 2a9ca46e37209c642acc8a93e1fbba4e, type: 3}
     description: The way we rich folk pass the time.
     canGenerateIncome: 0
@@ -2661,7 +2666,7 @@ MonoBehaviour:
     incomeInterval: 15
   - buildingPrefab: {fileID: 5803172906976268831, guid: e72f8707a55801c419a4f4f63daec56d, type: 3}
     displayName: Diner
-    cost: 300
+    cost: 600
     previewImage: {fileID: 21300000, guid: 2190f26b4f4579240a2b6d6eebbc06dc, type: 3}
     description: For meals of a truly high class.
     canGenerateIncome: 0
@@ -2669,7 +2674,7 @@ MonoBehaviour:
     incomeInterval: 15
   - buildingPrefab: {fileID: 5803172906976268831, guid: a729eb13e77fa50458a9d547b2f6ff0f, type: 3}
     displayName: Pretpark
-    cost: 150
+    cost: 900
     previewImage: {fileID: 21300000, guid: f37079f3100d1bf4dbf72fa008496c20, type: 3}
     description: Finally, a rollercoaster.
     canGenerateIncome: 0
@@ -2677,7 +2682,7 @@ MonoBehaviour:
     incomeInterval: 15
   - buildingPrefab: {fileID: 5803172906976268831, guid: 9519876c9fd6fb141be861f6f7e8b4ee, type: 3}
     displayName: Swimming Pool
-    cost: 150
+    cost: 450
     previewImage: {fileID: 21300000, guid: 7a2ec3f418a280b42a71d815a209466d, type: 3}
     description: The President doesn't trust the Gazanian salt water.
     canGenerateIncome: 0
@@ -2685,7 +2690,7 @@ MonoBehaviour:
     incomeInterval: 15
   - buildingPrefab: {fileID: 5803172906976268831, guid: d220080679bc1b7469b8975ef1848f7e, type: 3}
     displayName: Private Island
-    cost: 150
+    cost: 2000
     previewImage: {fileID: 21300000, guid: d24d178a44b3f0e4db2e93f68e5f6299, type: 3}
     description: For Trump, Elon, and their financial friends.
     canGenerateIncome: 0
@@ -2693,7 +2698,7 @@ MonoBehaviour:
     incomeInterval: 15
   randomizeBuildings: 0
   loopBuildings: 0
-  startingCurrency: 4252525
+  startingCurrency: 500
   currencyText: {fileID: 1368286312}
   buildingNameText: {fileID: 301741337}
   buildingCostText: {fileID: 1021380245}
