@@ -34,7 +34,6 @@ public class GridEditor : Editor
     private bool _showGridCoordinates = true;
     private bool _showGridLines = true;
     
-    // Save/Load
     private bool _showSaveLoadSection = true;
     private string _saveFileName = "GridLayout";
     
