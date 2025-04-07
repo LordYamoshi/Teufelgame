@@ -272,30 +272,27 @@ public class GameStateManager : MonoBehaviour
     /// </summary>
     private bool CanPlaceBuilding(GridObject gridObject)
     {
-        bool isFirstBuilding = !gridManager.FirstObjectPlaced || gridManager.GetPlayerPlacedObjectCount() == 0;
-
         if (verboseLogging)
         {
-            Debug.Log($"CanPlaceBuilding - Is first building: {isFirstBuilding}");
-            Debug.Log($"CanPlaceBuilding - FirstObjectPlaced flag: {gridManager.FirstObjectPlaced}");
-            Debug.Log($"CanPlaceBuilding - Player placed count: {gridManager.GetPlayerPlacedObjectCount()}");
+            Debug.Log($"Checking placement for building: {gridObject.gameObject.name}");
         }
 
-        // If not first building, find all cells adjacent to existing buildings
-        HashSet<Vector2Int> adjacentCells = new HashSet<Vector2Int>();
+        // First, check if we can clear any deletable pre-placed objects
+        bool canClearPreplacedObjects = CanClearPreplacedObjectsForPlacement(gridObject);
 
-        if (!isFirstBuilding)
+        if (!canClearPreplacedObjects)
         {
-            adjacentCells = GetAdjacentCells();
-
-            if (adjacentCells.Count == 0)
+            if (verboseLogging)
             {
-                Debug.LogWarning("No adjacent cells found but not first building - scanning entire grid as fallback");
-                isFirstBuilding = true;
+                Debug.Log("Cannot place building: No way to clear pre-placed objects");
             }
+
+            return false;
         }
 
-        // Try all rotations
+        bool isFirstBuilding = !gridManager.FirstObjectPlaced || gridManager.GetPlayerPlacedObjectCount() == 0;
+
+        // Try all possible rotations
         for (int rot = 0; rot < 4; rot++)
         {
             gridObject.rotationIndex = rot;
@@ -303,7 +300,7 @@ public class GameStateManager : MonoBehaviour
 
             if (isFirstBuilding)
             {
-                // For first building, scan the entire grid
+                // For first building, scan entire grid
                 if (TryScanEntireGrid(gridObject))
                 {
                     return true;
@@ -311,16 +308,46 @@ public class GameStateManager : MonoBehaviour
             }
             else
             {
-                // For subsequent buildings, check only adjacent cells
+                // Get adjacent cells from existing player-placed buildings
+                HashSet<Vector2Int> adjacentCells = GetAdjacentCells();
+
                 foreach (var adjacentCell in adjacentCells)
                 {
+                    // Get the cells this object would occupy at this position
                     List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(adjacentCell);
 
-                    if (gridManager.IsValidPlacement(occupiedCells))
+                    bool canPlace = true;
+                    foreach (var cell in occupiedCells)
+                    {
+                        // Check if cell is within grid bounds
+                        if (!gridManager.IsWithinGridBounds(cell))
+                        {
+                            canPlace = false;
+                            break;
+                        }
+
+                        // Check if cell is valid for placement
+                        // Allow placement if the cell is occupied by a deletable pre-placed object
+                        if (!gridManager.IsCellValid(cell))
+                        {
+                            // Check if the occupying object is a pre-placed, deletable object
+                            var occupyingObject = gridManager._cells[cell].OccupyingObject;
+                            if (occupyingObject == null ||
+                                !gridManager.IsPreplacedObject(occupyingObject) ||
+                                !occupyingObject.GetComponent<GridObject>().isDestructible)
+                            {
+                                canPlace = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    // If all cells are valid or can be cleared, this is a potential placement
+                    if (canPlace)
                     {
                         if (verboseLogging)
                         {
-                            Debug.Log($"Found valid placement at {adjacentCell} with rotation {rot}");
+                            Debug.Log($"Valid placement found at {adjacentCell} with rotation {rot}");
                         }
 
                         return true;
@@ -330,14 +357,95 @@ public class GameStateManager : MonoBehaviour
         }
 
         // No valid placement found
+        if (verboseLogging)
+        {
+            Debug.Log("No valid placement found for this building");
+        }
+
         return false;
     }
+
+    private bool CanClearPreplacedObjectsForPlacement(GridObject gridObjectToBePlaced)
+    {
+        // Count of deletable pre-placed objects
+        int deletablePreplacedObjectCount = 0;
+
+        // Try all rotations of the object
+        for (int rot = 0; rot < 4; rot++)
+        {
+            gridObjectToBePlaced.rotationIndex = rot;
+            gridObjectToBePlaced.CalculateRelativeCellPositions();
+
+            // Check entire grid for potential placements after clearing pre-placed objects
+            for (int x = 0; x < gridManager.maxWidth; x++)
+            {
+                for (int y = 0; y < gridManager.maxDepth; y++)
+                {
+                    Vector2Int pos = new Vector2Int(x, y);
+                    List<Vector2Int> occupiedCells = gridObjectToBePlaced.GetOccupiedCells(pos);
+
+                    // Track deletable pre-placed objects
+                    HashSet<GameObject> deletableObjects = new HashSet<GameObject>();
+                    bool canPlace = true;
+
+                    foreach (var cell in occupiedCells)
+                    {
+                        // Check if cell is within grid bounds
+                        if (!gridManager.IsWithinGridBounds(cell))
+                        {
+                            canPlace = false;
+                            break;
+                        }
+
+                        // If cell is not valid, check if it's a deletable pre-placed object
+                        if (!gridManager.IsCellValid(cell))
+                        {
+                            var occupyingObject = gridManager._cells[cell].OccupyingObject;
+
+                            // Check if object is pre-placed and deletable
+                            if (occupyingObject == null ||
+                                !gridManager.IsPreplacedObject(occupyingObject) ||
+                                !occupyingObject.GetComponent<GridObject>().isDestructible)
+                            {
+                                canPlace = false;
+                                break;
+                            }
+
+                            // Add to deletable objects
+                            deletableObjects.Add(occupyingObject);
+                        }
+                    }
+
+                    // If placement is possible after clearing pre-placed objects
+                    if (canPlace)
+                    {
+                        if (verboseLogging)
+                        {
+                            Debug.Log($"Potential placement found at {pos} with rotation {rot}. " +
+                                      $"Deletable pre-placed objects: {deletableObjects.Count}");
+                        }
+
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if (verboseLogging)
+        {
+            Debug.Log("No placement possible even after clearing pre-placed objects");
+        }
+
+        return false;
+    }
+
 
     /// <summary>
     /// Scans the entire grid for a valid placement position
     /// </summary>
     private bool TryScanEntireGrid(GridObject gridObject)
     {
+        // Scan entire grid for first building or when no adjacent cells are found
         for (int x = 0; x < gridManager.maxWidth; x++)
         {
             for (int y = 0; y < gridManager.maxDepth; y++)
@@ -345,11 +453,22 @@ public class GameStateManager : MonoBehaviour
                 Vector2Int pos = new Vector2Int(x, y);
                 List<Vector2Int> occupiedCells = gridObject.GetOccupiedCells(pos);
 
-                if (gridManager.IsValidPlacement(occupiedCells))
+                // Check if all cells for this building's layout can be placed
+                bool canPlace = true;
+                foreach (var cell in occupiedCells)
+                {
+                    if (!gridManager.IsWithinGridBounds(cell) || !gridManager.IsCellValid(cell))
+                    {
+                        canPlace = false;
+                        break;
+                    }
+                }
+
+                if (canPlace)
                 {
                     if (verboseLogging)
                     {
-                        Debug.Log($"Found valid placement at {pos} for first building");
+                        Debug.Log($"First building can be placed at {pos}");
                     }
                     return true;
                 }
@@ -465,6 +584,8 @@ public class GameStateManager : MonoBehaviour
         }
         
         Debug.Log($"Checking valid placements for: {currentBuilding.displayName}");
+        
+        
         
         // Create a test object
         GameObject testObj = Instantiate(currentBuilding.buildingPrefab);

@@ -75,7 +75,7 @@ public class GridManager : MonoBehaviour
     public string defaultGridLayout = "";
     
 
-    private Dictionary<Vector2Int, GridCell> _cells = new Dictionary<Vector2Int, GridCell>();
+    public Dictionary<Vector2Int, GridCell> _cells = new Dictionary<Vector2Int, GridCell>();
     
     public Transform cellContainer;
     
@@ -275,19 +275,19 @@ public class GridManager : MonoBehaviour
     
     /// <summary>
     /// Converts a grid position to a world position
-    /// </summary>
     public Vector3 GetWorldPosition(Vector2Int gridPos, bool applyHeightOffset = false)
     {
         float offsetX = -maxWidth * cellSize / 2;
         float offsetZ = -maxDepth * cellSize / 2;
-    
-        return new Vector3(
+
+        Vector3 position = new Vector3(
             offsetX + gridPos.x * cellSize + cellSize / 2,
             gridOrigin.y + (applyHeightOffset ? objectHeightOffset : 0),
             offsetZ + gridPos.y * cellSize + cellSize / 2
         ) + new Vector3(gridOrigin.x, 0, gridOrigin.z);
+
+        return position;
     }
-    
     public Vector3 GetWorldPositionWithOffset(Vector2Int gridPos)
     {
         return GetWorldPosition(gridPos, true);
@@ -362,6 +362,7 @@ public class GridManager : MonoBehaviour
     /// </summary>
     public bool PlaceObject(GameObject obj, List<Vector2Int> occupiedCells, bool isPreplaced = false)
     {
+        
         if (obj == null || occupiedCells == null || occupiedCells.Count == 0)
         {
             Debug.LogError("Invalid parameters for PlaceObject");
@@ -386,6 +387,8 @@ public class GridManager : MonoBehaviour
                 cell.SetOccupyingObject(obj);
             }
         }
+        
+        
     
         // Track this object and its cells
         _placedObjects[obj] = new List<Vector2Int>(occupiedCells);
@@ -408,6 +411,21 @@ public class GridManager : MonoBehaviour
             Debug.Log($"Player object {obj.name} placed on {occupiedCells.Count} cells");
         }
     
+        // If it's a GridObject, ensure rotation is preserved
+        GridObject gridObject = obj.GetComponent<GridObject>();
+        if (gridObject != null)
+        {
+            Debug.Log($"GridObject Rotation Index: {gridObject.rotationIndex}");
+        
+            // Preserve the full original rotation
+            Quaternion originalRotation = obj.transform.rotation;
+        
+            // Update the rotation index based on current rotation
+            gridObject.rotationIndex = Mathf.RoundToInt(originalRotation.eulerAngles.y / 90f) % 4;
+        
+            Debug.Log($"Updated Rotation Index: {gridObject.rotationIndex}");
+        }
+
         return true;
     }
     
@@ -557,12 +575,18 @@ public class GridManager : MonoBehaviour
         
         return HasEdgeConnectivity(cellsToCheck);
     }
-    
+
     /// <summary>
     /// Checks if the specified cells have at least one edge connected to an existing object
     /// </summary>
     public bool HasEdgeConnectivity(List<Vector2Int> cellsToCheck)
     {
+        // If first object placement is exempt, allow it
+        if (!FirstObjectPlaced || GetPlayerPlacedObjectCount() == 0)
+        {
+            return true;
+        }
+
         foreach (var pos in cellsToCheck)
         {
             // Check all adjacent cells (up, down, left, right)
@@ -573,7 +597,7 @@ public class GridManager : MonoBehaviour
                 new Vector2Int(pos.x, pos.y + 1),
                 new Vector2Int(pos.x, pos.y - 1)
             };
-        
+
             foreach (var adjacentPos in adjacentCells)
             {
                 // Skip if the adjacent cell is part of our placement
@@ -581,26 +605,26 @@ public class GridManager : MonoBehaviour
                 {
                     continue;
                 }
-            
+
                 // Skip if the adjacent cell is out of bounds
                 if (!IsWithinGridBounds(adjacentPos))
                 {
                     continue;
                 }
-            
+
                 // Check if the adjacent cell exists and is occupied
                 if (_cells.TryGetValue(adjacentPos, out GridCell cell) && cell.OccupyingObject != null)
                 {
-
-                    if (!_preplacedObjects.ContainsKey(cell.OccupyingObject))
+                    // Ensure it's not a pre-placed object
+                    if (!IsPreplacedObject(cell.OccupyingObject))
                     {
-                        return true; 
+                        return true;
                     }
                 }
             }
         }
-    
-        return false; 
+
+        return false;
     }
 
 

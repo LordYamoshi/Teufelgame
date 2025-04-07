@@ -377,7 +377,7 @@ public class GridDragAndDropManager : MonoBehaviour
         // Apply the stored layout to the preview object
         _previewGridObject.SetObjectLayout(_originalLayout, _originalPivot);
         _previewGridObject.rotationIndex = _originalRotation;
-
+        
         // Set the material
         _previewGridObject.SetAllMaterials(validPositionMaterial);
 
@@ -448,6 +448,7 @@ public class GridDragAndDropManager : MonoBehaviour
     {
         // First, apply the rotation-specific offset to the grid position if enabled
         Vector2Int offsetGridPosition = gridPosition;
+        Quaternion originalRotation = obj.transform.rotation;
 
         if (enableRotationOffsetCorrection)
         {
@@ -514,6 +515,8 @@ public class GridDragAndDropManager : MonoBehaviour
             worldCenter.y + heightOffset,
             worldCenter.z
         );
+        
+        obj.transform.rotation = originalRotation;
         Debug.Log($"Final position: {obj.transform.position} for {obj.name} with rotation {gridObj.rotationIndex}");
     }
 
@@ -760,12 +763,7 @@ public class GridDragAndDropManager : MonoBehaviour
                 _selectedGridObject.rotationIndex = _previewGridObject.rotationIndex;
                 _selectedGridObject.CalculateRelativeCellPositions();
 
-                // Apply visual rotation
-                _selectedObject.transform.rotation = Quaternion.Euler(
-                    _selectedObject.transform.rotation.eulerAngles.x,
-                    _selectedGridObject.rotationIndex * 90,
-                    0
-                );
+
             }
 
             // Place at new position
@@ -787,6 +785,8 @@ public class GridDragAndDropManager : MonoBehaviour
             // Play success sound and effect
             PlaySound(placementSuccessSound);
             SpawnPlacementEffect(_selectedObject.transform.position);
+            
+
 
             // Fire the building placed event
             OnBuildingPlaced?.Invoke();
@@ -804,6 +804,12 @@ public class GridDragAndDropManager : MonoBehaviour
         else
         {
             Debug.LogWarning($"Invalid placement at {gridPosition}!");
+            // Apply visual rotation
+            _selectedObject.transform.rotation = Quaternion.Euler(
+                _selectedObject.transform.rotation.eulerAngles.x,
+                _selectedGridObject.rotationIndex * 90,
+                0
+            );
             PlaySound(placementErrorSound);
         }
 
@@ -907,7 +913,12 @@ public class GridDragAndDropManager : MonoBehaviour
             // Invalid placement, destroy the preview
             Destroy(_placementObject);
             Debug.LogWarning($"Invalid placement at {gridPosition}, canceled placement");
-
+            // Apply visual rotation
+            _selectedObject.transform.rotation = Quaternion.Euler(
+                _selectedObject.transform.rotation.eulerAngles.x,
+                _selectedGridObject.rotationIndex * 90,
+                0
+            );
             // Play error sound
             PlaySound(placementErrorSound);
         }
@@ -938,20 +949,21 @@ public class GridDragAndDropManager : MonoBehaviour
     
     private void CancelDragging()
     {
-        // Return the object to its original position
+
+        // Store the original full rotation
+        Quaternion originalRotation = _selectedObject.transform.rotation;
+
         gridManager.PlaceObject(_selectedObject, _originalOccupiedCells);
         _selectedGridObject.UpdateCurrentGridPositions(_originalGridPosition);
         _selectedGridObject.RestoreOriginalMaterials();
-        
-        // Reset rotation if changed
-        if (_selectedGridObject.rotationIndex != _originalRotation)
-        {
-            _selectedGridObject.rotationIndex = _originalRotation;
-            _selectedGridObject.CalculateRelativeCellPositions();
-            _selectedObject.transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, _originalRotation * 90, 0);
-        }
-        
-        Debug.Log($"Placement canceled, object returned to original position at {_originalGridPosition}");
+    
+        // Explicitly restore rotation
+        _selectedObject.transform.rotation = Quaternion.Euler(
+            _selectedGridObject.transform.eulerAngles.x,
+            _selectedGridObject.rotationIndex * 90,
+            0
+        );
+        _selectedGridObject.CalculateRelativeCellPositions();
         
         // Clean up
         Destroy(_previewObject);
@@ -960,6 +972,7 @@ public class GridDragAndDropManager : MonoBehaviour
         _selectedGridObject = null;
         _previewObject = null;
         _previewGridObject = null;
+
     }
     
     private void CancelPlacementMode()
@@ -971,7 +984,6 @@ public class GridDragAndDropManager : MonoBehaviour
         _previewObject = null;
         _previewGridObject = null;
         
-        Debug.Log("Placement canceled");
     }
     
     /// <summary>

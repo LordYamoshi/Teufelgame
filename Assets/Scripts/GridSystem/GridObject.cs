@@ -109,7 +109,12 @@ public class GridObject : MonoBehaviour
     
     private void Start()
     {
-        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x, rotationIndex * 90, 0);
+        float originalXRotation = transform.rotation.eulerAngles.x;
+        transform.rotation = Quaternion.Euler(
+            originalXRotation, 
+            rotationIndex * 90, 
+            0
+        );
         
         // Apply the initial shape if none is set
         if (objectLayout.Length <= 1 && currentShapeType != ShapeType.Custom)
