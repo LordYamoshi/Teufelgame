@@ -448,33 +448,78 @@ public class GridDragAndDropManager : MonoBehaviour
 
     private void DirectPositioning(GameObject obj, GridObject gridObj, Vector2Int gridPosition)
     {
-        // First, apply the rotation
-        obj.transform.rotation = Quaternion.Euler(
-            obj.transform.rotation.eulerAngles.x,
-            gridObj.rotationIndex * 90,
-            0
-        );
+        // First, apply the rotation-specific offset to the grid position if enabled
+        Vector2Int offsetGridPosition = gridPosition;
+        Quaternion originalRotation = obj.transform.rotation;
 
-        // Get the cells this object would occupy
-        List<Vector2Int> occupiedCells = gridObj.GetOccupiedCells(gridPosition);
-        if (occupiedCells.Count == 0) return;
-
-        // Calculate the center of the occupied cells
-        Vector3 centerPosition = Vector3.zero;
-        foreach (var cell in occupiedCells)
+        if (enableRotationOffsetCorrection)
         {
-            centerPosition += gridManager.GetWorldPosition(cell);
+            // Get the appropriate offsets based on rotation
+            float offsetX = 0f;
+            float offsetZ = 0f;
+
+            switch (gridObj.rotationIndex)
+            {
+                case 0:
+                    offsetX = rotation0OffsetX;
+                    offsetZ = rotation0OffsetZ;
+                    break;
+                case 1:
+                    offsetX = rotation1OffsetX;
+                    offsetZ = rotation1OffsetZ;
+                    break;
+                case 2:
+                    offsetX = rotation2OffsetX;
+                    offsetZ = rotation2OffsetZ;
+                    break;
+                case 3:
+                    offsetX = rotation3OffsetX;
+                    offsetZ = rotation3OffsetZ;
+                    break;
+            }
+
+            // Apply the offset (only if non-zero)
+            if (offsetX != 0 || offsetZ != 0)
+            {
+                offsetGridPosition = new Vector2Int(
+                    gridPosition.x + Mathf.RoundToInt(offsetX),
+                    gridPosition.y + Mathf.RoundToInt(offsetZ)
+                );
+
+                Debug.Log($"Applied rotation {gridObj.rotationIndex} offset: X={offsetX}, Z={offsetZ}");
+                Debug.Log($"Grid position adjusted from {gridPosition} to {offsetGridPosition}");
+            }
         }
-        centerPosition /= occupiedCells.Count;
 
-        // Apply the grid manager's height offset
+        // Get all the occupied grid positions based on the adjusted grid position
+        List<Vector2Int> occupiedPositions = gridObj.GetOccupiedCells(offsetGridPosition);
+
+        if (occupiedPositions.Count == 0) return;
+
+        // Calculate the center position
+        Vector3 worldCenter;
+
+        // Find center of occupied cells
+        Vector3 sum = Vector3.zero;
+        foreach (var pos in occupiedPositions)
+        {
+            sum += gridManager.GetWorldPosition(pos);
+        }
+
+        worldCenter = sum / occupiedPositions.Count;
+
+        // Use the gridManager's height offset instead of our local one
+        float heightOffset = gridManager.objectHeightOffset;
+
+        // Position the object
         obj.transform.position = new Vector3(
-            centerPosition.x, 
-            gridManager.gridOrigin.y + gridManager.objectHeightOffset, 
-            centerPosition.z
+            worldCenter.x,
+            worldCenter.y + heightOffset,
+            worldCenter.z
         );
-
-        Debug.Log($"Positioned {obj.name} at precise center: {obj.transform.position}");
+        
+        obj.transform.rotation = originalRotation;
+        Debug.Log($"Final position: {obj.transform.position} for {obj.name} with rotation {gridObj.rotationIndex}");
     }
 
     private Vector2Int GetPreciseGridPosition(Vector3 worldPoint)
