@@ -14,10 +14,10 @@ public class GridCell
     public GameObject CellVisual { get; private set; }
 
     // Visual state constants
-    private Color _normalColor = Color.black;
+    private Color _normalColor = new Color(1f, 1f, 1f, 0.55f);//0.0f);
     private Color _validPlacementColor = Color.green;
     private Color _invalidPlacementColor = Color.red;
-    private Color _occupiedColor = Color.gray;
+    private Color _occupiedColor = new Color(0.72f, 0.72f, 0.72f, 1f);//Color.gray;
     private Color _highlightColor = new Color(0.2f, 0.6f, 1f); // Blue highlight
     
     private const float DEFAULT_EFFECT_DURATION = 0.3f;
