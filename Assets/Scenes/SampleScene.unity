@@ -1548,6 +1548,11 @@ MonoBehaviour:
   purchaseSound: {fileID: 0}
   insufficientFundsSound: {fileID: 0}
   shopManager: {fileID: 1350008878}
+  sufficientFundsColor: {r: 1, g: 1, b: 1, a: 1}
+  canAffordColor: {r: 0, g: 1, b: 0, a: 1}
+  insufficientFundsColor: {r: 1, g: 0, b: 0, a: 1}
+  flashDuration: 0.1
+  numberOfFlashes: 3
 --- !u!1 &953956897
 GameObject:
   m_ObjectHideFlags: 0
