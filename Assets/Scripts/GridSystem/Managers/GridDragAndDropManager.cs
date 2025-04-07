@@ -50,11 +50,13 @@ public class GridDragAndDropManager : MonoBehaviour
     
     [Tooltip("UI container for placement options")]
     public GameObject placementUI;
-    
+
     [Header("Visual Effects")]
     [Tooltip("Particle effect for successful placement")]
     public GameObject placementSuccessEffect;
-    
+
+    public AudioClip destroyAudioClip;
+
     [Tooltip("Audio clip for successful placement")]
     public AudioClip placementSuccessSound;
     
@@ -1010,7 +1012,8 @@ public class GridDragAndDropManager : MonoBehaviour
         GameObject objToDestroy = _currentlySelectedObject;
         Vector3 position = objToDestroy.transform.position;
         bool destroyed = gridManager.DestroyObject(objToDestroy);
-    
+
+
         if (destroyed)
         {
             Debug.Log($"Pre-placed object {objToDestroy.name} destroyed");
@@ -1018,6 +1021,9 @@ public class GridDragAndDropManager : MonoBehaviour
         
             // Play destruction effect/sound
             SpawnPlacementEffect(position);
+            PlaySound(destroyAudioClip);
+            // Nog niet perfect maar goed genoeg
+            gridManager.ResetAllCellVisuals();
         }
     }
     #endregion
