@@ -430,6 +430,7 @@ GameObject:
   - component: {fileID: 1269194447}
   - component: {fileID: 1269194449}
   - component: {fileID: 1269194448}
+  - component: {fileID: 1269194450}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -503,8 +504,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 48
+  m_fontSizeBase: 48
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -555,6 +556,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1269194446}
   m_CullTransparentMesh: 1
+--- !u!95 &1269194450
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1269194446}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 36c134980eb76c94787067ba2ed5d894, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1597230948
 GameObject:
   m_ObjectHideFlags: 0
@@ -702,6 +725,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1806987468}
   - component: {fileID: 1806987467}
+  - component: {fileID: 1806987469}
   m_Layer: 0
   m_Name: Trump's Amazing Gaza Resort final master
   m_TagString: Untagged
@@ -722,7 +746,7 @@ AudioSource:
   m_audioClip: {fileID: 8300000, guid: ef52e6baf4cb8264098fc21d8ae8dbdb, type: 3}
   m_Resource: {fileID: 8300000, guid: ef52e6baf4cb8264098fc21d8ae8dbdb, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.8
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -821,6 +845,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1806987469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1806987466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12d3c9b3c408b714cb71520a2fe6569a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ambianceClip: {fileID: 8300000, guid: a4b41feaa26a625408c3a85d46877c89, type: 3}
+  audioSource: {fileID: 1806987467}
 --- !u!1 &1909328991
 GameObject:
   m_ObjectHideFlags: 0
