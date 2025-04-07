@@ -2603,27 +2603,91 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   availableBuildings:
-  - buildingPrefab: {fileID: 2931104201684680380, guid: 26acd792df0cd324598ffced68208297, type: 3}
-    displayName: Hotel
-    cost: 2424
-    previewImage: {fileID: 21300000, guid: a0275245f0ffed24ea6bb16f7686d97e, type: 3}
-    description: This is the hotel
-    canGenerateIncome: 0
-    incomeAmount: 10
-    incomeInterval: 15
-  - buildingPrefab: {fileID: 6128971476781655698, guid: ca4a3ec2423082d469999594f873c913, type: 3}
-    displayName: Air Port
-    cost: 256625
-    previewImage: {fileID: 21300000, guid: ef5c4e9c584f91a49803010fd0544e9b, type: 3}
-    description: This is the airport
-    canGenerateIncome: 0
-    incomeAmount: 10
-    incomeInterval: 15
   - buildingPrefab: {fileID: 9053618419550519268, guid: c02e4cd8e9a5fb743a57ac32ab46286b, type: 3}
     displayName: Tower
-    cost: 25252626
-    previewImage: {fileID: 21300000, guid: f229f8b243dc97147a9bc439b0cf3798, type: 3}
-    description: This is the tower
+    cost: 500
+    previewImage: {fileID: 21300000, guid: f509d57ec0588664ca3b7f942b6cf91e, type: 3}
+    description: Make the Gazastrip Great Again!
+    canGenerateIncome: 1
+    incomeAmount: 10000
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 6128971476781655698, guid: ca4a3ec2423082d469999594f873c913, type: 3}
+    displayName: Airport
+    cost: 200
+    previewImage: {fileID: 21300000, guid: 05a5c98f3c7defd4db3f7ad61d869ed3, type: 3}
+    description: Do you really think the president wants to stay here?
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 2931104201684680380, guid: 26acd792df0cd324598ffced68208297, type: 3}
+    displayName: Hotel
+    cost: 250
+    previewImage: {fileID: 21300000, guid: d8d25fa79da1bf04d949fc6e5bc171a9, type: 3}
+    description: A very, luxurious, american sleeping solution.
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 5803172906976268831, guid: 99648ee933957b544aafa5c42b91c5ee, type: 3}
+    displayName: Strip Club
+    cost: 2424
+    previewImage: {fileID: 21300000, guid: 88418a1da0dd5a34fa8ceacd4c8550ec, type: 3}
+    description: Essential to improving Gaza, trust me.
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 5803172906976268831, guid: 8cbb67838ccde1f41895b2e8c32edce1, type: 3}
+    displayName: Statue
+    cost: 500
+    previewImage: {fileID: 21300000, guid: 0fa7eaca3cefa834c92281ffbd3c5b30, type: 3}
+    description: An important milestone for the folk of Gaza.
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 5803172906976268831, guid: 05603e920e3f2584bad9bf73e14af913, type: 3}
+    displayName: Golf Course
+    cost: 400
+    previewImage: {fileID: 21300000, guid: 2a9ca46e37209c642acc8a93e1fbba4e, type: 3}
+    description: The way we rich folk pass the time.
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 5803172906976268831, guid: e8bb4d9908d04294bb0035d7f1ef670d, type: 3}
+    displayName: Wallmaga
+    cost: 800
+    previewImage: {fileID: 21300000, guid: 45c1c66e7e84bc14b9fd520aaaf2da16, type: 3}
+    description: A grocery store, rebranded to align with Trump's vision.
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 5803172906976268831, guid: e72f8707a55801c419a4f4f63daec56d, type: 3}
+    displayName: Diner
+    cost: 300
+    previewImage: {fileID: 21300000, guid: 2190f26b4f4579240a2b6d6eebbc06dc, type: 3}
+    description: For meals of a truly high class.
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 5803172906976268831, guid: a729eb13e77fa50458a9d547b2f6ff0f, type: 3}
+    displayName: Pretpark
+    cost: 150
+    previewImage: {fileID: 21300000, guid: f37079f3100d1bf4dbf72fa008496c20, type: 3}
+    description: Finally, a rollercoaster.
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 5803172906976268831, guid: 9519876c9fd6fb141be861f6f7e8b4ee, type: 3}
+    displayName: Swimming Pool
+    cost: 150
+    previewImage: {fileID: 21300000, guid: 7a2ec3f418a280b42a71d815a209466d, type: 3}
+    description: The President doesn't trust the Gazanian salt water.
+    canGenerateIncome: 0
+    incomeAmount: 10
+    incomeInterval: 15
+  - buildingPrefab: {fileID: 5803172906976268831, guid: d220080679bc1b7469b8975ef1848f7e, type: 3}
+    displayName: Private Island
+    cost: 150
+    previewImage: {fileID: 21300000, guid: d24d178a44b3f0e4db2e93f68e5f6299, type: 3}
+    description: For Trump, Elon, and their financial friends.
     canGenerateIncome: 0
     incomeAmount: 10
     incomeInterval: 15
